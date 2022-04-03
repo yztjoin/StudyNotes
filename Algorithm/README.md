@@ -63,7 +63,7 @@
 
 **思路**
 
-![image-20210705164907055](assets/image-20210705164907055.png)
+![image-20210705164907055](./assets/image-20210705164907055.png)
 
 ```
 左指针：(x1,y1) 右指针(X2,y2) 
@@ -93,7 +93,7 @@ S = abs((X1 - X2)) * min(Y1,Y2)
 解释：上面是由数组 [0,1,0,2,1,0,1,3,2,1,2,1] 表示的高度图，在这种情况下，可以接 6 个单位的雨水（蓝色部分表示雨水）。
 ```
 
-![image-20210706172657890](assets/image-20210706172657890.png)
+![image-20210706172657890](./assets/image-20210706172657890.png)
 
 **思路**
 
@@ -170,7 +170,7 @@ var trap = function (height) {
 
 给定一个链表，返回链表开始入环的第一个节点。 如果链表无环，则返回 `null`。
 
-![image-20210707172623936](assets/image-20210707172623936.png)
+![image-20210707172623936](./assets/image-20210707172623936.png)
 
 ```
 输入：head = [3,2,0,-4], pos = 1
@@ -182,15 +182,15 @@ var trap = function (height) {
 
 示例图
 
-<img src="assets/image-20210707172805210.png" alt="image-20210707172805210" style="zoom: 80%;" />
+<img src="./assets/image-20210707172805210.png" alt="image-20210707172805210" style="zoom: 80%;" />
 
-<img src="assets/image-20210707174435971.png" alt="image-20210707174435971"  />
+<img src="./assets/image-20210707174435971.png" alt="image-20210707174435971"  />
 
-![image-20210707175829384](assets/image-20210707175829384.png)
+![image-20210707175829384](./assets/image-20210707175829384.png)
 
-![image-20210709113703564](assets/image-20210709113703564.png)
+![image-20210709113703564](./assets/image-20210709113703564.png)
 
-![image-20210709113839652](assets/image-20210709113839652.png)
+![image-20210709113839652](./assets/image-20210709113839652.png)
 
 ```
 使用快慢指针解题，快指针fast和慢指针slow，快指针一次两步，慢指针一次一步，
@@ -1035,7 +1035,7 @@ var maxAreaOfIsland = function (grid) {
 
 注意: 合并过程必须从两个树的根节点开始。
 
-![image-20220224113721949](assets/image-20220224113721949.png)
+![image-20220224113721949](./assets/image-20220224113721949.png)
 
 **代码：**
 
@@ -1075,7 +1075,7 @@ struct Node {
 
 初始状态下，所有 next 指针都被设置为 NULL。
 
-![image-20220224145905701](assets/image-20220224145905701.png)
+![image-20220224145905701](./assets/image-20220224145905701.png)
 
 **代码**
 
@@ -1119,7 +1119,7 @@ var connect = function (root) {
 
 两个相邻元素间的距离为 1 。
 
-<img src="assets/image-20220224174834597.png" alt="image-20220224174834597" style="zoom: 80%;" />
+<img src="./assets/image-20220224174834597.png" alt="image-20220224174834597" style="zoom: 80%;" />
 
 **代码**
 
@@ -1422,7 +1422,7 @@ var allPathsSourceTarget = function(graph) {
 
 
 
-![image-20220330104304397](assets/image-20220330104304397.png)
+![image-20220330104304397](./assets/image-20220330104304397.png)
 
 ## 被围绕的区域（*）
 
@@ -1434,7 +1434,7 @@ var allPathsSourceTarget = function(graph) {
 >输出：[["X","X","X","X"],["X","X","X","X"],["X","X","X","X"],["X","O","X","X"]]
 >解释：被围绕的区间不会存在于边界上，换句话说，任何边界上的 'O' 都不会被填充为 'X'。 任何不在边界上，或不与边界上的 'O' 相连的 'O' 最终都会被填充为 'X'。如果两个元素在水平或垂直方向相邻，则称它们是“相连”的。
 >
->![image-20220330164124397](assets/image-20220330164124397.png)
+>![image-20220330164124397](./assets/image-20220330164124397.png)
 
 代码
 
@@ -1587,7 +1587,7 @@ var reverseList = function (head) {
 };
 ```
 
-![image-20220301094256787](assets/image-20220301094256787.png)
+![image-20220301094256787](./assets/image-20220301094256787.png)
 
 ## **组合**
 

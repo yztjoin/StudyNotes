@@ -840,6 +840,131 @@ var twoSum = function(nums, target) {
 };
 ```
 
+## 括号生成
+
+描述：[括号生成](https://leetcode-cn.com/problems/generate-parentheses/)
+
+>数字 `n` 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 **有效的** 括号组合。
+>
+>**示例 1：**
+>
+>```
+>输入：n = 3
+>输出：["((()))","(()())","(())()","()(())","()()()"]
+>```
+
+**代码**
+
+```javascript
+/**
+ * @param {number} n
+ * @return {string[]}
+ */
+var generateParenthesis = function (n) {
+    // 首先保存所有括号下的数量
+    // 增加一个括号，所得到的情况只能由两种，第一个在内部增加，第二个在外部增加
+    /*
+        0个括号
+        -''
+        1个括号
+        结果：()
+        2个括号
+        -内部增加：(())
+        -放在外部：()()
+        -结果：()()、(())
+        3个括号
+        -需要把前面所有的组合情况考虑进去
+        -内2外0、内1外1、内0外2：为什么总和是2，因为在本身增加的一个括号也要算进去
+        -内2外1：(()())、((()))
+        -内1外1：(())()
+        -内0外2：()()()、()(())
+        -结果：(()())、((()))、(())()、()()()、()(())
+     */
+    let dp = [
+        [''],
+        ['()'],
+        ['()()', '(())']
+    ]
+    if (n <= 2) {
+        return dp[n]
+    }
+    let p = '('
+    let q = ')'
+    for (let i = 3; i <= n; i++) {
+        let dpLength = dp.length - 1
+        let arr = []
+        for (let k = dpLength; k >= 0; k--) {
+            let leg = dp[k].length - 1
+            for (let j = 0; j <= leg; j++) {
+                dp[dpLength - k].forEach(value => {
+                    arr.push(p + dp[k][j] + q + value)
+                })
+            }
+        }
+        dp.push(arr)
+    }
+    console.log(dp)
+    return dp[n]
+};
+```
+
+## 跳跃游戏
+
+描述：[跳跃游戏 II](https://leetcode-cn.com/problems/jump-game-ii/)
+
+>给你一个非负整数数组 nums ，你最初位于数组的第一个位置。
+>
+>数组中的每个元素代表你在该位置可以跳跃的最大长度。
+>
+>你的目标是使用最少的跳跃次数到达数组的最后一个位置。
+>
+>假设你总是可以到达数组的最后一个位置。
+>
+>示例 1:
+>
+>输入: nums = [2,3,1,1,4]
+>输出: 2
+>解释: 跳到最后一个位置的最小跳跃数是 2。
+>     从下标为 0 跳到下标为 1 的位置，跳 1 步，然后跳 3 步到达数组的最后一个位置。
+
+代码：
+
+```javascript
+/**
+ * @param {number[]} nums
+ * @return {number}
+ */
+var jump = function (nums) {
+    if (nums.length <= 1) return 0
+    // 已走步数
+    let count = 1
+    // 当前剩余行动点
+    let nowStep = nums[0]
+    // 最大行动点：存遍历之前（某个值到当前下标差值）的最大值
+    let maxStep = 0
+    let lng = nums.length - 1
+    for (let i = 1; i <= lng; ++i) {
+        // 走一位减少行动数
+        nowStep--
+        if (maxStep > 0) {
+            maxStep--
+        }
+        // 更新最大值行动数  
+        if (nowStep < nums[i]) {
+            maxStep = Math.max(nums[i], maxStep)
+        }
+        // 增加步数更新当前行动数
+        if (nowStep <= 0 && i < lng) {
+            nowStep = maxStep
+            count++
+        }
+    }
+    return count
+};
+```
+
+
+
 # 深度优先（DFS：Depth First Search）和广度优先（BFS：Breath First Search）
 
 ## 性质
@@ -1884,6 +2009,154 @@ var combinationSum = function (candidates, target) {
 ```
 
 ![image-20220411154532682](assets/image-20220411154532682.png)
+
+## 数组总和Ⅱ
+
+描述：[组合总和 II](https://leetcode-cn.com/problems/combination-sum-ii/)
+
+>给定一个候选人编号的集合 candidates 和一个目标数 target ，找出 candidates 中所有可以使数字和为 target 的组合。
+>
+>candidates 中的每个数字在每个组合中只能使用 一次 。
+>
+>注意：解集不能包含重复的组合。 
+>
+>示例 1:
+>
+>输入: candidates = [10,1,2,7,6,1,5], target = 8,
+>输出:
+>[
+>[1,1,6],
+>[1,2,5],
+>[1,7],
+>[2,6]
+>]
+
+**代码**
+
+```javascript
+/**
+ * @param {number[]} candidates
+ * @param {number} target
+ * @return {number[][]}
+ */
+ // 递归就是把一个大问题拆分成一个个相等的小问题，重复处理这个小问题最终得到结果
+var combinationSum2 = function (candidates, target) {
+    let path = [], leng = candidates.length;
+    const res = []
+    // 排序用于顺序入栈
+    candidates.sort();
+    backtrack(0, 0)
+    return res
+    /**
+        需要解决的问题：找出所有不重复的数组并且累计和等于指定值的所有组合
+        此递归处理的小问题：
+        1、入栈条件：当前栈的总和+当前遍历值 < 目标值并且之前没有重复的
+        --重复判断当前遍历不等于之前的值，因为已经排序所以不会出现相互颠倒的值
+        2、出栈条件：符合条件的组合保存过后，出栈
+        3、处理：循环所有值，对每一个值进行分析
+        --是否符合入栈条件
+        --是否需要出栈
+        所有的判断都是为最终的结果进行服务
+     */
+    function backtrack(num, j) {
+        // 如果大于目标值回溯
+        if (num > target) return;
+        if (num === target) {
+            res.push(Array.from(path))
+            return
+        }
+        // 定义f用于过滤重复值
+        let f = -1
+        for (let i = j; i < leng; ++i) {
+            let n = candidates[i]
+            // 值大于目标或者值相等则越过这个值
+            if (target < num + n || n === f) {
+                continue
+            }
+            // 符合条件的入栈
+            path.push(n)
+            // 保存当前栈内数的总和
+            num += n
+            // 保存当前遍历的值用于下次遍历判断重复值
+            f = n
+            // 递归下一个值
+            backtrack(num, i + 1)
+            // 出栈最后一个值，相当于遍历下一个符合条件的值
+            path.pop()
+            // 减去当前出栈的值
+            num -= n;
+        }
+    }
+};
+```
+
+## 电话号码的字母组合
+
+**描述**：[电话号码的字母组合](https://leetcode-cn.com/problems/letter-combinations-of-a-phone-number/)
+
+>给定一个仅包含数字 2-9 的字符串，返回所有它能表示的字母组合。答案可以按 任意顺序 返回。
+>
+>给出数字到字母的映射如下（与电话按键相同）。注意 1 不对应任何字母。
+>
+>![image-20220301094256787](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2021/11/09/200px-telephone-keypad2svg.png)
+>
+>**示例 1：**
+>
+>```javascript
+>输入：digits = "23"
+>输出：["ad","ae","af","bd","be","bf","cd","ce","cf"]
+>```
+
+**代码**：
+
+```javascript
+/**
+ * @param {string} digits
+ * @return {string[]}
+ */
+var letterCombinations = function (digits) {
+    // 判断空情况
+    if(!digits) return []
+    // 字典查表
+    let arr = [
+        [''],
+        ['a', 'b', 'c'],
+        ['d', 'e', 'f'],
+        ['g', 'h', 'i'],
+        ['j', 'k', 'l'],
+        ['m', 'n', 'o'],
+        ['p', 'q', 'r', 's'],
+        ['t', 'u', 'v'],
+        ['w', 'x', 'y', 'z']
+    ]
+    // 存储结果
+    let res = []
+    backtrack([], 0)
+    return res
+    function backtrack(combination, j) {
+        // 如果到达位数则返回结果
+        // 三个法则
+        /*  1、入栈条件
+            2、出栈条件
+            3、入栈处理
+         */
+        if (combination.length === digits.length) {
+            res.push(combination.join(''))
+            return
+        }
+        if (j >= digits.length) return
+        // 3、入栈处理：取当前位的下标，每一次处理的只是针对当前位置处理，然后遍历当前位置可能出现的所有情况
+        let item = +(digits[j]) - 1
+        for (let i = 0; i < arr[item].length; ++i) {
+            // 1、入栈条件：当前遍历位字母入栈
+            combination.push(arr[item][i])
+            backtrack(combination, j + 1)
+            // 2、处理完成后出栈
+            combination.pop()
+        }
+    }
+};
+```
 
 
 

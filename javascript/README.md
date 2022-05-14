@@ -792,7 +792,7 @@ ECMAScript变量
 >**注意：** 在很多语言中，字符串是使用对象表示的，因此被认为是引用类型。ECMAScript
 >打破了这个惯例。
 
-## 动态属性
+### 动态属性
 
 原始值和引用值定义类似，但是可以对值做什么差别很大，原始值无法操作属性，引用值可以操作属性
 
@@ -809,11 +809,216 @@ console.log(typeof name1); // string
 console.log(typeof name2); // object
 ```
 
-## 复制值
+### 复制值
 
 原始值复制值会
 
 存储方式、复制方式
 
-84
+```javascript
+// new 出来的obj ths.name = name 只是指向 属于浅拷贝
+class Person {
+    constructor(name, obj) {
+        this.name = name
+        this.obj = obj
+    }
+}
+//  {...obj} 结构出来的只能深拷贝一层
+// 方法内修改对象也会影响到外部
+function test(obj) {
+    obj.a = 123
+    return obj
+}
+```
 
+### 确定类型
+
+typeof：操作符最适合用来判断一个变量是否为原始类型。更确切地说，它是判断一 个变量是否为字符串、数值、布尔值或 undefined 的最好方式。无法准确的判断object、array、null
+
+```javascript
+let s = "Nicholas";
+let b = true;
+let i = 22;
+let u;
+let n = null;
+let o = new Object();
+console.log(typeof s); // string
+console.log(typeof i); // number
+console.log(typeof b); // boolean
+console.log(typeof u); // undefined
+console.log(typeof n); // object
+console.log(typeof o); // object 
+```
+
+instanceof：我们通常不关心一个值是不是对象， 而是想知道它是什么类型的对象。为了解决这个问题，ECMAScript 提供了 instanceof 操作符
+
+```javascript
+console.log(person instanceof Object); // 变量 person 是 Object 吗？
+console.log(colors instanceof Array); // 变量 colors 是 Array 吗？
+console.log(pattern instanceof RegExp); // 变量 pattern 是 RegExp 吗？
+```
+
+## 执行上下文与作用域
+
+变量或函数的上下文决定 了它们可以访问哪些数据，以及它们的行为。每个上下文都有一个关联的变量对象（variable object）， 而这个上下文中定义的所有变量和函数都存在于这个对象上。虽然无法通过代码访问变量对象，但后台 处理数据会用到它。
+
+使用 let 和 const 的顶级声明不会定义在全局上下文中，但在作用域链解析上效果是一样的。
+
+上下文在其所有代码都执行完毕后会被销毁，包括定义 在它上面的所有变量和函数（全局上下文在应用程序退出前才会被销毁，比如关闭网页或退出浏览器）。
+
+每个函数调用都有自己的上下文。当代码执行流进入函数时，函数的上下文被推到一个上下文栈上。 在函数执行完之后，上下文栈会弹出该函数上下文，将控制权返还给之前的执行上下文。ECMAScript 程序的执行流就是通过这个上下文栈进行控制的。
+
+上下文中的代码在执行的时候，会创建变量对象的一个作用域链（scope chain）。决定 了各级上下文中的代码在访问变量和函数时的顺序,代码正在执行的上下文的变量对象始终位于作用域 链的最前端。
+
+上下文之间的连接是线性的、有序的。每个上下文都可以 到上一级上下文中去搜索变量和函数，但任何上下文都不能到下一级上下文中去搜索。
+
+```javascript
+var color = "blue";
+function changeColor() {
+ let anotherColor = "red";
+ function swapColors() {
+ let tempColor = anotherColor;
+ anotherColor = color;
+ color = tempColor;
+ // 这里可以访问 color、anotherColor 和 tempColor
+ }
+ // 这里可以访问 color 和 anotherColor，但访问不到 tempColor
+ swapColors();
+}
+// 这里只能访问 color
+changeColor();
+```
+
+### 作用域链增强
+
+```javascript
+function buildUrl() {
+ let qs = "?debug=true";
+ with(location){
+ let url = href + qs;
+ }
+ return url;
+}
+```
+
+这里，with 语句将 location 对象作为上下文，因此 location 会被添加到作用域链前端。 buildUrl()函数中定义了一个变量 qs。当 with 语句中的代码引用变量 href 时，实际上引用的是 location.href，也就是自己变量对象的属性。在引用 qs 时，引用的则是定义在 buildUrl()中的那 个变量，它定义在函数上下文的变量对象上。而在 with 语句中使用 var 声明的变量 url 会成为函数 上下文的一部分，可以作为函数的值被返回；但像这里使用 let 声明的变量 url，因为被限制在块级作 用域（稍后介绍），所以在 with 块之外没有定义。
+
+### 变量声明
+
+ES6 之后，JavaScript 的变量声明经历了翻天覆地的变化。
+
+1. **使用 var 的函数作用域声明**
+
+```javascript
+function add(num1, num2) {
+ var sum = num1 + num2;
+ return sum;
+}
+let result = add(10, 20); // 30
+console.log(sum); // 报错：sum 在这里不是有效变量
+
+function add(num1, num2) {
+ sum = num1 + num2;
+ return sum;
+}
+let result = add(10, 20); // 30
+console.log(sum); // 30 
+```
+
+>未经声明而初始化变量是 JavaScript 编程中一个非常常见的错误，会导致很多问题。 为此，读者在初始化变量之前一定要先声明变量。在严格模式下，未经声明就初始化变量 会报错。
+
+var 声明会被拿到函数或全局作用域的顶部，位于作用域中所有代码之前。这个现象叫作“提升” （hoisting）。
+
+通过在声明之前打印变量，可以验证变量会被提升。声明的提升意味着会输出 undefined 而不是 Reference Error
+
+```javascript
+console.log(name); // undefined
+var name = 'Jake';
+function() {
+ console.log(name); // undefined
+ var name = 'Jake';
+} 
+
+```
+
+2. **使用 let 的块级作用域声明**
+
+ES6 新增的 let 关键字跟 var 很相似，但它的作用域是块级的，这也是 JavaScript 中的新概念。块 级作用域由最近的一对包含花括号{}界定。换句话说，if 块、while 块、function 块，甚至连单独 的块也是 let 声明变量的作用域。
+
+let 的行为非常适合在循环中声明迭代变量。使用 var 声明的迭代变量会泄漏到循环外部，这种情 况应该避免。
+
+```javascript
+for (var i = 0; i < 10; ++i) {}
+console.log(i); // 10
+for (let j = 0; j < 10; ++j) {}
+console.log(j); // ReferenceError: j 没有定义
+```
+
+严格来讲，let 在 JavaScript 运行时中也会被提升，但由于“暂时性死区”（temporal dead zone）的 缘故，实际上不能在声明之前使用 let 变量。因此，从写 JavaScript 代码的角度说，let 的提升跟 var 是不一样的。
+
+**暂时性死区**：只要块级作用域内存在`let`命令，它所声明的变量就“绑定”（binding）这个区域，不再受外部的影响。
+
+3. **使用 const 的常量声明**
+
+除了 let，ES6 同时还增加了 const 关键字。使用 const 声明的变量必须同时初始化为某个值。 一经声明，在其生命周期的任何时候都不能再重新赋予新值。
+
+```javascript
+const a; // SyntaxError: 常量声明时没有初始化
+const b = 3;
+console.log(b); // 3
+b = 4; // TypeError: 给常量赋值
+// const 除了要遵循以上规则，其他方面与 let 声明是一样的
+```
+
+const 声明只应用到顶级原语或者对象。换句话说，赋值为对象的 const 变量不能再被重新赋值 为其他引用值，但对象的键则不受限制。
+
+4. **标识符查找**
+
+在局部上下文中找到该标识符，则搜索 停止，变量确定；如果没有找到变量名，则继续沿作用域链搜索。（注意，作用域链中的对象也有一个 原型链，因此搜索可能涉及每个对象的原型链。）这个过程一直持续到搜索至全局上下文的变量对象。 如果仍然没有找到标识符，则说明其未声明。
+
+```javascript
+var color = 'blue';
+function getColor() {
+ return color;
+}
+console.log(getColor()); // 'blue' 
+```
+
+在这个例子中，调用函数 getColor()时会引用变量 color。为确定 color 的值会进行两步搜索。 第一步，搜索 getColor()的变量对象，查找名为 color 的标识符。结果没找到，于是继续搜索下一 个变量对象（来自全局上下文），然后就找到了名为 color 的标识符。因为全局变量对象上有 color 的定义，所以搜索结束。
+
+在局部变量 color 声明之后的任何代码都无法访问全局变量 color，除非使用完全限定的写法 window.color。
+
+## 垃圾回收
+
+JavaScript 通过自动内存管理实现内存分配和闲置资源回收。基本思路很简单：确定哪个变量不会再 使用，然后释放它占用的内存。这个过程是周期性的，即垃圾回收程序每隔一定时间（或者说在代码执 行过程中某个预定的收集时间）就会自动运行。垃圾回收过程是一个近似且不完美的方案，因为某块内存是否还有用，属于“不可判定的”问题，意味着靠算法是解决不了的。
+
+如何标记未使用的变量也许有不同的实现方式。用到过两种主要的 标记策略：**标记清理**和**引用计数**。
+
+### 标记清理（mark-and-sweep）
+
+JavaScript 最常用的垃圾回收策略是**标记清理**。
+
+当变量进入上下文时，这个变量就是增加存在于上下文中的标记，离开上下文后会被标记离开上下文的标记，当垃圾回收机制运行的时候，会查询内存中的变量，把当前上下文中的变量和引用到的变量标记去掉，那么剩下有标记的变量就是永远都不会使用的垃圾，随后垃圾回收程序做一次**内存清理**，销毁带标记的所有值并释放内存
+
+问题就在于垃圾回收机制什么时候开始运行？
+
+### 引用计数（reference counting）
+
+每个值给一个引用数目，比如：赋一个引用值时，这个引用数目就加1，如果同一个值被赋给另一个值，则引用数目就加1，如果保存对该值的引用变量被其他值给覆盖了，那么引用数减1。当引用值等于0则表示该无法再访问到了，可以回收了。
+
+引用计数最早由 Netscape Navigator 3.0 采用，但很快就遇到了严重的问题：循环引用。所谓循环引 用，就是对象 A 有一个指针指向对象 B，而对象 B 也引用了对象 A。比如：
+
+```javascript
+function problem() {
+ let objectA = new Object();
+ let objectB = new Object();
+ objectA.someOtherObject = objectB;
+ objectB.anotherObject = objectA;
+} 
+```
+
+在这个例子中，objectA 和 objectB 通过各自的属性相互引用，意味着它们的引用数都是 2。在 标记清理策略下，这不是问题，因为在函数结束后，这两个对象都不在作用域中。而在引用计数策略下，objectA 和 objectB 在函数结束后还会存在，因为它们的引用数永远不会变成 0。如果函数被多次调 用，则会导致大量内存永远不会被释放。为此，Netscape 在 4.0 版放弃了引用计数，转而采用标记清理。 事实上，引用计数策略的问题还不止于此。
+
+### 内存管理
+
+垃圾回收程序会周期性运行，如果内存中分配了很多变量，则可能造成性能损失，因此垃圾回收的 时间调度很重要。尤其是在内存有限的移动设备上，垃圾回收有可能会明显拖慢渲染的速度和帧速率。 开发者不知道什么时候运行时会收集垃圾，因此最好的办法是在写代码时就要做到：无论什么时候开始 收集垃圾，都能让它尽快结束工作。

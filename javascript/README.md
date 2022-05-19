@@ -1,3 +1,5 @@
+
+
 浏览器具体运行情况
 
 浏览器访问（计算机网络）
@@ -776,6 +778,17 @@ ECMAScript 中的函数与其他语言中的函数不一样。
 
 # 变量、作用域和内存
 
+基本数据类型：boolean、string、number、undefined、null
+
+引用数据类型：function、array、object、
+
+**基本数类型和引用数据类型的区别**
+
+- 基本数据类型无法增加自定义属性
+- 基本数据类型保存在栈内存中，引用数据累心保存在堆内存
+- 赋值不同
+- 基本数据类型按值访问，引用数据类型按指针访问
+
 ## 原始值和引用值
 
 ECMAScript变量
@@ -785,7 +798,7 @@ ECMAScript变量
 
 在把一个值赋给变量时，javaScript引擎必须确定这个值是原始值还是引用值。
 
-**原始值**：undefined、null、boolean、string、number、symbol，原始值的变量是按值访问的，因为我们操作的就是存储在变量中的实际值。
+**原始值**：undefined（未定义）、null（空指针）、boolean、string、number、symbol，原始值的变量是按值访问的，因为我们操作的就是存储在变量中的实际值。
 
 引用值是保存在内存中对象。javascript不允许直接访问内存位置，因此不能直接操作对象所在的内存空间。因此实际上操作的是该对象的引用而非本身。为此，保存引用值的变量是按照引用访问的
 
@@ -1022,3 +1035,391 @@ function problem() {
 ### 内存管理
 
 垃圾回收程序会周期性运行，如果内存中分配了很多变量，则可能造成性能损失，因此垃圾回收的 时间调度很重要。尤其是在内存有限的移动设备上，垃圾回收有可能会明显拖慢渲染的速度和帧速率。 开发者不知道什么时候运行时会收集垃圾，因此最好的办法是在写代码时就要做到：无论什么时候开始 收集垃圾，都能让它尽快结束工作。
+
+将内存占用量保持在一个较小的值可以让页面性能更好。优化内存占用的最佳手段就是保证在执行 代码时只保存必要的数据。如果数据不再必要，那么把它设置为 null，从而释放其引用。这也可以叫 作解除引用。这个建议最适合全局变量和全局对象的属性。局部变量在超出作用域后会被自动解除引用， 如下面的例子所示
+
+```javascript
+function createPerson(name){
+ let localPerson = new Object();
+ localPerson.name = name;
+ return localPerson;
+}
+let globalPerson = createPerson("Nicholas");
+// 解除 globalPerson 对值的引用
+globalPerson = null; 
+```
+
+### 内存泄漏
+
+1、意外声明全局变量
+
+```javascript
+function setName() {
+ name = 'Jake';
+} 
+```
+
+**意外声明全局变量**：解释器会把变量 name 当作 window 的属性来创建（相当于 window.name = 'Jake'）。 可想而知，在 window 对象上创建的属性，只要 window 本身不被清理就不会消失。
+
+2、定时器
+
+```
+let name = 'Jake';
+setInterval(() => {
+ console.log(name);
+}, 100); 
+```
+
+**定时器**导致内存泄漏。只要定时器一直运行，回调函数中引用的 name 就会一直占用内存。垃圾回收程序当然知道这一点， 因而就不会清理外部变量。
+
+3、**闭包内存泄露**
+
+```javascript
+let outer = function() {
+    let name = 'Jake';
+    return function() {
+        return name;
+    };
+}; 
+```
+
+调用 outer()会导致分配给 name 的内存被泄漏。以上代码执行后创建了一个内部闭包，只要返回 的函数存在就不能清理 name，因为闭包一直在引用着它。假如 name 的内容很大（不止是一个小字符 串），那可能就是个大问题了。
+
+# 基本引用类型
+
+构造函数、实例
+
+引用值（**对象**）是某个特定引用类型的**实例**。在 ECMAScript 中，**引用类型**是把数据和功能组织到一起的结构，经常被人错误地称作“**类**”。
+
+**对象被认为是某个特定引用类型的实例**。新对象通过使用 new 操作符后跟一个构造函数（constructor） 来创建。构造函数就是用来创建新对象的函数
+
+```javascript
+let now = new Date(); 
+// Date为引用类型、构造函数
+// now为引用值也称作对象或者实例
+// 引用类型是一组特定功能和数据的结构
+```
+
+## Date()
+
+```javascript
+// 本地时间 2000 年 1 月 1 日零点
+let y2k = new Date(2000, 0);
+// 本地时间 2005 年 5 月 5 日下午 5 点 55 分 55 秒
+let allFives = new Date(2005, 4, 5, 17, 55, 55); 
+// ECMAScript 还提供了 Date.now()方法，返回表示方法执行时日期和时间的毫秒数。
+// 起始时间
+let start = Date.now();
+// 调用函数
+doSomething();
+// 结束时间
+let stop = Date.now(),
+result = stop - start; 
+```
+
+# RegExp
+
+g：全局模式，表示查找字符串的全部内容，而不是找到第一个匹配的内容就结束。
+
+i：不区分大小写，表示在查找匹配时忽略 pattern 和字符串的大小写。
+
+m：多行模式，表示查找到一行文本末尾时会继续查找。
+
+y：粘附模式，表示只查找从 lastIndex 开始及之后的字符串。
+
+u：Unicode 模式，启用 Unicode 匹配。
+
+s：dotAll 模式，表示元字符.匹配任何字符（包括\n 或\r）。
+
+## 构造函数属性
+
+RegExp 构造函数本身也有几个属性。（在其他语言中，这种属性被称为静态属性。）
+
+这些属性适用 于作用域中的所有正则表达式，而且会根据最后执行的正则表达式操作而变化。
+
+每个属性都有一个全名和一个简写。
+
+| 全名         | 简写 | 说明                                      |
+| ------------ | ---- | ----------------------------------------- |
+| input        | $_   | 最后搜索的字符串（非标准特性）            |
+| lastMatch    | $&   | 最后匹配的文本                            |
+| lastParen    | $+   | 最后匹配的捕获组（非标准特性）            |
+| leftContext  | $`   | input 字符串中出现在 lastMatch 前面的文本 |
+| rightContext | $'   | input 字符串中出现在 lastMatch 后面的文本 |
+
+```javascript
+let text = "this has been a short summer";
+let pattern = /(.)hort/g;
+if (pattern.test(text)) {
+ console.log(RegExp.input); // this has been a short summer
+ console.log(RegExp.leftContext); // this has been a
+ console.log(RegExp.rightContext); // summer
+ console.log(RegExp.lastMatch); // short
+ console.log(RegExp.lastParen); // s
+} 
+```
+
+RegExp 还有其他几个构造函数属性，可以存储最多 9 个捕获组的匹配项。这些属性通过 RegExp. $1~RegExp.$9 来访问，分别包含第 1~9 个捕获组的匹配项。
+
+```javascript
+let text = "this has been a short summer";
+let pattern = /(..)or(.)/g;
+if (pattern.test(text)) {
+ console.log(RegExp.$1); // sh
+ console.log(RegExp.$2); // t
+}
+```
+
+
+
+## 实例方法
+
+### **exec()**
+
+如果模式设置了全局标记，则每次调用 exec()方法会返回一个匹配的信息。如果没有设置全局标 记，则无论对同一个字符串调用多少次 exec()，也只会返回第一个匹配的信息。
+
+![image-20220516154936363](assets/image-20220516154936363.png)
+
+```javascript
+let text = "mom and dad and baby";
+let pattern = /mom( and dad( and baby)?)?/gi;
+let matches = pattern.exec(text);
+console.log(matches.index); // 0
+console.log(matches.input); // "mom and dad and baby"
+console.log(matches[0]); // "mom and dad and baby"
+console.log(matches[1]); // " and dad and baby"
+console.log(matches[2]); // " and baby" 
+```
+
+没有全局模式
+
+![image-20220516155057156](assets/image-20220516155057156.png)
+
+```javascript
+let text = "cat, bat, sat, fat";
+let pattern = /.at/;
+let matches = pattern.exec(text);
+console.log(matches.index); // 0
+console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 0
+matches = pattern.exec(text);
+console.log(matches.index); // 0
+console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 0
+```
+
+如果模式设置了粘附标记 y，则每次调用 exec()就只会在 lastIndex 的位置上寻找匹配项。粘附 标记覆盖全局标记。
+
+```javascript
+let text = "cat, bat, sat, fat";
+let pattern = /.at/y;
+let matches = pattern.exec(text);
+console.log(matches.index); // 0
+console.log(matches[0]); // cat
+console.log(pattern.lastIndex); // 3
+// 以索引 3 对应的字符开头找不到匹配项，因此 exec()返回 null
+// exec()没找到匹配项，于是将 lastIndex 设置为 0
+matches = pattern.exec(text);
+console.log(matches); // null
+console.log(pattern.lastIndex); // 0
+// 向前设置 lastIndex 可以让粘附的模式通过 exec()找到下一个匹配项：
+pattern.lastIndex = 5;
+matches = pattern.exec(text);
+console.log(matches.index); // 5
+console.log(matches[0]); // bat
+console.log(pattern.lastIndex); // 8 
+```
+
+## y：粘附模式
+
+全局匹配(/g)操作会读取还会更新lastIndex属性的值,在匹配失败后,lastIndex属性的值会被重置为0
+
+粘滞匹配(/y)也会让这样做会读取还会更新lastIndex属性的值但不会把lastIndex属性的值重置为0
+
+全局匹配和粘滞匹配都会从字符串中由正则对象的lastIndex属性的值指定的偏移位置处开始匹配,但区别是:粘滞匹配中,^元字符的意义变了,它代表的不是整个字符串的开头位置,而代表的就是这个偏移位置.
+
+```javascript
+// 全局匹配
+var re = /^./g;
+print(re.test("foo"));   //true
+print(re.lastIndex);     //1
+print(re.test("foo"));   //false
+print(re.lastIndex);     //0
+// 粘滞匹配
+var re = /^./y;
+print(re.test("foo"));   //true
+print(re.lastIndex);     //1
+print(re.test("foo"));   //true
+print(re.lastIndex);     //2
+```
+
+每个粘滞正则中不管第一个字符是不是^元字符,都会被隐式的加上^.
+
+```javascript
+/o/y.test("foo") 
+// 相当于
+/^o/y.test("foo") 
+```
+
+# 原始值包装类型
+
+每当用 到某个原始值的方法或属性时，后台都会创建一个相应原始包装类型的对象，从而暴露出操作原始值的各种方法。
+
+```javascript
+let s1 = "some text";
+let s2 = s1.substring(2); 
+```
+
+字符串原本不应该存在方法，但实际上又继续运行了
+
+当 第二行访问 s1 时，是以读模式访问的，也就是要从内存中读取变量保存的值。在以读模式访问字符串 值的任何时候，后台都会执行以下 3 步：
+
+1. 创建一个String类型的实例
+2. 调用实例上的特定方法
+3. 销毁实例
+
+可以把这 3 步想象成执行了如下 3 行 ECMAScript 代码：
+
+```javascript
+let s1 = new String("some text");
+let s2 = s1.substring(2);
+s1 = null; 
+```
+
+引用类型与原始值包装类型的主要区别在于对象的生命周期。在通过 new 实例化引用类型后，得到 的实例会在离开作用域时被销毁，而自动创建的原始值包装对象则只存在于访问它的那行代码执行期 间。这意味着不能在运行时给原始值添加属性和方法。
+
+```javascript
+let s1 = "some text";
+s1.color = "red";
+console.log(s1.color); // undefined 
+```
+
+在第二段代码中，创建了一个新的String对象，然后增加color属性，之后销毁，当进行第三段代码时，又重新创建了新的String对象，但此时的String实例是没有color属性的。
+
+## Boolean引用类型
+
+Boolean对象和原始值区别
+
+- !!new Boolean(false)  // true  因为是对象所以转换为true
+- falseObject instanceof Boolean  // true、falseValue instanceof Boolean  // false
+
+**所有的原始值不要使用对象定义**
+
+## Number
+
+与 Boolean 类型一样，Number 类型重写了 valueOf()、toLocaleString()和 toString()方 法。valueOf()方法返回 Number 对象表示的原始数值，另外两个方法返回数值字符串。toString() 方法可选地接收一个表示基数的参数，并返回相应基数形式的数值字符串
+
+```javascript
+let num = 10;
+console.log(num.toString()); // "10"
+console.log(num.toString(2)); // "1010"
+console.log(num.toString(8)); // "12"
+console.log(num.toString(10)); // "10"
+console.log(num.toString(16)); // "a"
+```
+
+浮点精度问题
+
+toPrecision()方法会根据情况返回最合理的输出结果，可能是固定长度，也可能是科学记数法 形式。这个方法接收一个参数，表示结果中数字的总位数（不包含指数）。
+
+```javascript
+let num = 99;
+console.log(num.toPrecision(1)); // "1e+2"
+console.log(num.toPrecision(2)); // "99"
+console.log(num.toPrecision(3)); // "99.0"
+```
+
+ES6 新增了 Number.isInteger()方法，isInteger()方法与安全整数
+
+```javascript
+console.log(Number.isInteger(1)); // true
+console.log(Number.isInteger(1.00)); // true
+console.log(Number.isInteger(1.01)); // false 
+```
+
+为了鉴别整数是否在这个范围内，可以使用 Number.isSafeInteger()方法
+
+```javascript
+console.log(Number.isSafeInteger(-1 * (2 ** 53))); // false
+console.log(Number.isSafeInteger(-1 * (2 ** 53) + 1)); // true
+console.log(Number.isSafeInteger(2 ** 53)); // false
+console.log(Number.isSafeInteger((2 ** 53) - 1)); // true 
+```
+
+## String
+
+### startsWith()、 endsWith()和 includes()。
+
+这些方法都会从字符串中搜索传入的字符串，并返回一个表示是否包含 的布尔值。它们的区别在于，startsWith()检查开始于索引 0 的匹配项，endsWith()检查开始于索 引(string.length - substring.length)的匹配项，而 includes()检查整个字符串
+
+```javascript
+let message = "foobarbaz";
+console.log(message.startsWith("foo")); // true
+console.log(message.startsWith("bar")); // false
+console.log(message.endsWith("baz")); // true
+console.log(message.endsWith("bar")); // false
+console.log(message.includes("bar")); // true
+console.log(message.includes("qux")); // false 
+```
+
+startsWith()和 includes()方法接收可选的第二个参数，表示开始搜索的位置。
+
+endsWith()方法接收可选的第二个参数，表示应该当作字符串末尾的位置。
+
+###  repeat()
+
+ECMAScript 在所有字符串上都提供了 repeat()方法。这个方法接收一个整数参数，表示要将字 符串复制多少次，然后返回拼接所有副本后的结果
+
+```javascript
+let stringValue = "na ";
+console.log(stringValue.repeat(16) + "batman");
+// na na na na na na na na na na na na na na na na batman
+```
+
+### padStart()和 padEnd()方法
+
+padStart()和 padEnd()方法会复制字符串，如果小于指定长度，则在相应一边填充字符，直至 满足长度条件。这两个方法的第一个参数是长度，第二个参数是可选的填充字符串，默认为空格
+
+```javascript
+let stringValue = "foo";
+console.log(stringValue.padStart(6)); // " foo"
+console.log(stringValue.padStart(9, ".")); // "......foo"
+console.log(stringValue.padEnd(6)); // "foo "
+console.log(stringValue.padEnd(9, ".")); // "foo......"
+```
+
+### replace()函数
+
+第二个参数是字符串的情况下，有几个特殊的字符序列，可以用来插入正则表达式操作的值。
+
+使用这些特殊的序列，可以在替换文本中使用之前匹配的内容，如下面的例子所示
+
+```javascript
+let text = "cat, bat, sat, fat";
+result = text.replace(/(.at)/g, "word ($1)");
+console.log(result); // word (cat), word (bat), word (sat), word (fat) 
+```
+
+replace()的第二个参数可以是一个函数。在只有一个匹配项时，这个函数会收到 3 个参数：与整 个模式匹配的字符串、匹配项在字符串中的开始位置，以及整个字符串。在有多个捕获组的情况下，每 个匹配捕获组的字符串也会作为参数传给这个函数，但最后两个参数还是与整个模式匹配的开始位置和 原始字符串。这个函数应该返回一个字符串，表示应该把匹配项替换成什么。使用函数作为第二个参数 可以更细致地控制替换过程
+
+```javascript
+function htmlEscape(text) {
+ return text.replace(/[<>"&]/g, function(match, pos, originalText) {
+ switch(match) {
+ case "<":
+ return "&lt;";
+ case ">":
+ return "&gt;";
+ case "&":
+ return "&amp;";
+ case "\"":
+ return "&quot;";
+ }
+ });
+}
+console.log(htmlEscape("<p class=\"greeting\">Hello world!</p>"));
+// "&lt;p class=&quot;greeting&quot;&gt;Hello world!</p>" 
+```
+
+# 单例内置对象
+

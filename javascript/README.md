@@ -1346,6 +1346,50 @@ console.log(Number.isSafeInteger(2 ** 53)); // false
 console.log(Number.isSafeInteger((2 ** 53) - 1)); // true 
 ```
 
+**不同进制的标记字符**
+
+0B、0b开头为二进制
+
+0o开头为8进制
+
+0开头为十进制
+
+0x、0X开头为十六进制
+
+```javascript
+// 二进制 Binary system
+// 以0b或0B开头
+var FLT_SIGNBIT  = 0b10000000000000000000000000000000; // 2147483648
+var FLT_EXPONENT = 0b01111111100000000000000000000000; // 2139095040
+var FLT_MANTISSA = 0B00000000011111111111111111111111; // 8388607
+
+// 二进制展示（方便展示，理解上却更难了）
+// 正数：就是正数的原码
+// 负数：负号+正数的原码
+// 不是数值的二进制补码
+parseInt(-10).toString(2) // -1010
+
+// 八进制 Octal number system
+// 以0开头，ECMAScript 6支持0o
+var n = 0755; // 493
+var m = 0644; // 420
+var e = 0o755; // 493 ECMAScript 6规范
+
+// 十进制 Decimal system
+// 以0开头，但是后面跟8以下会当作八进制处理
+var d = 1234567890;
+var l = 0888; // 888 十进制
+var o = 0777; // 511 八进制
+
+// 十六进制 Hexadecimal
+// 以0x或0X开头
+0xFFFFFFFFFFFFFFFFF // 295147905179352830000
+0x123456789ABCDEF   // 81985529216486900
+0XA                 // 10
+```
+
+
+
 ## String
 
 ### startsWith()、 endsWith()和 includes()。
@@ -1422,4 +1466,502 @@ console.log(htmlEscape("<p class=\"greeting\">Hello world!</p>"));
 ```
 
 # 单例内置对象
+
+## Global
+
+在全局作用域中定义的变量和函数都会变成 Global 对象的属性 。前面介绍的函数， 包括 isNaN()、isFinite()、parseInt()和 parseFloat()，实际上都是 Global 对象的方法。除 了这些，Global 对象上还有另外一些方法。
+
+###  URL 编码方法
+
+encodeURI()和 encodeURIComponent()方法用于编码统一资源标识符（URI），使用 URI 编码方法来编码 URI 可以让浏览器能够理解它们， 同时又以特殊的 UTF-8 编码替换掉所有无效字符。
+
+两个方法的区别：
+
+- encodeURI()不会编码属于 URL 组件的特殊字符，比如冒号、斜杠、问号、 井号，
+-  encodeURIComponent()会编码它发现的所有非标准字符。
+
+```javascript
+let uri = "http://www.wrox.com/illegal value.js#start";
+// "http://www.wrox.com/illegal%20value.js#start"
+console.log(encodeURI(uri));
+// "http%3A%2F%2Fwww.wrox.com%2Fillegal%20value.js%23start"
+console.log(encodeURIComponent(uri));
+```
+
+>URI方法 encodeURI()、encodeURIComponent()、decodeURI()和 decodeURIComponent()取代了 escape()和 unescape()方法，后者在 ECMA-262 第 3 版中就已经 废弃了。URI 方法始终是首选方法，因为它们对所有 Unicode 字符进行编码，而原来的方 法只能正确编码 ASCII 字符。不要在生产环境中使用 escape()和 unescape()。
+
+### Global 对象属性
+
+Global 对象有很多属性，其中一些前面已经提到过了。像 undefined、NaN 和 Infinity 等特殊 值都是 Global 对象的属性。此外，所有原生引用类型构造函数，比如 Object 和 Function，也都是 Global 对象的属性。
+
+### window 对象
+
+虽然 ECMA-262 没有规定直接访问 Global 对象的方式，但浏览器将 window 对象实现为 Global 对象的代理。
+
+```javascript
+var color = "red";
+function sayColor() {
+ console.log(window.color);
+}
+window.sayColor(); // "red"
+```
+
+### 小结
+
+JavaScript 比较独特的一点是，函数实际上是 Function 类型的实例，也就是说函数也是对象。因 为函数也是对象，所以函数也有方法，可以用于增强其能力。
+
+由于原始值包装类型的存在，JavaScript 中的原始值可以被当成对象来使用。有 3 种原始值包装类 型：Boolean、Number 和 String。它们都具备如下特点。
+
+- 每种包装类型都映射到同名的原始类型。
+- 以读模式访问原始值时，后台会实例化一个原始值包装类型的对象，借助这个对象可以操作相 应的数据。
+- 涉及原始值的语句执行完毕后，包装对象就会被销毁。
+
+# 集合引用类型
+
+## Object
+
+## Array
+
+### Array.from()
+
+的第一个参数是一个类数组对象，即任何可迭代的结构，或者有一个 length 属性 和可索引元素的结构。
+
+```javascript
+// 字符串会被拆分为单字符数组
+console.log(Array.from("Matt")); // ["M", "a", "t", "t"]
+```
+
+Array.from()还接收第二个可选的映射函数参数。这个函数可以直接增强新数组的值，而无须像 调用 Array.from().map()那样先创建一个中间数组。还可以接收第三个可选参数，用于指定映射函 数中 this 的值。但这个重写的 this 值在箭头函数中不适用。
+
+```javascript
+const a1 = [1, 2, 3, 4];
+const a2 = Array.from(a1, x => x**2);
+const a3 = Array.from(a1, function(x) {return x**this.exponent}, {exponent: 2});
+console.log(a2); // [1, 4, 9, 16]
+console.log(a3); // [1, 4, 9, 16] 
+```
+
+### 数组索引
+
+数组 length 属性的独特之处在于，它不是只读的。通过修改 length 属性，可以从数组末尾删除
+
+```javascript
+let colors = ["red", "blue", "green"]; // 创建一个包含 3 个字符串的数组
+colors.length = 2;
+alert(colors[2]); // undefined 
+```
+
+使用 length 属性可以方便地向数组末尾添加元素，
+
+```javascript
+let colors = ["red", "blue", "green"]; // 创建一个包含 3 个字符串的数组
+colors[colors.length] = "black"; // 添加一种颜色（位置 3）
+colors[colors.length] = "brown"; // 再添加一种颜色（位置 4）
+```
+
+### 迭代器方法
+
+Array 的原型上暴露了 3 个用于检索数组内容的方法：keys()、values()和 entries()。keys()返回数组索引的迭代器，values()返回数组元素的迭代器，而 entries()返回 索引/值对的迭代器
+
+```javascript
+const a = ["foo", "bar", "baz", "qux"];
+// 因为这些方法都返回迭代器，所以可以将它们的内容
+// 通过 Array.from()直接转换为数组实例
+const aKeys = Array.from(a.keys());
+const aValues = Array.from(a.values());
+const aEntries = Array.from(a.entries()); 
+console.log(aKeys); // [0, 1, 2, 3]
+console.log(aValues); // ["foo", "bar", "baz", "qux"]
+console.log(aEntries); // [[0, "foo"], [1, "bar"], [2, "baz"], [3, "qux"]] 
+```
+
+使用 ES6 的解构可以非常容易地在循环中拆分键/值对：
+
+```javascript
+const a = ["foo", "bar", "baz", "qux"];
+for (const [idx, element] of a.entries()) {
+ alert(idx);
+ alert(element);
+}
+```
+
+### 栈 \ 队列方法：push、pop、shift、unshift
+
+push()方法接收任意数量的参数，并将它们添加到数组末尾，返回数组的最新长度。pop()方法则 用于删除数组的最后一项，同时减少数组的 length 值，返回被删除的项。
+
+```javascript
+let colors = new Array(); // 创建一个数组
+let count = colors.push("red", "green"); // 推入两项
+alert(count); // 2
+count = colors.push("black"); // 再推入一项
+alert(count); // 3
+let item = colors.pop(); // 取得最后一项
+alert(item); // black
+alert(colors.length); // 2
+```
+
+### 排序方法
+
+#### reverse()、sort()
+
+reverse()方法就 是将数组元素反向排列。
+
+```javascript
+let values = [1, 2, 3, 4, 5];
+values.reverse();
+alert(values); // 5,4,3,2,1 
+```
+
+sort()
+
+- 按照升序重新排列数组元素，即最小的值在前面，最大的值在后面。
+- 数值的字符串形式重新排序，字符串"10"在字符串"5"的前头
+- 比较函数接收两个参数，如果第一个参数应该排在第二个参数前面，就返回负值；如果两个参数相等，就返回 0；如果第一个参数应该排在第二个参数后面，就返回正值。
+
+### 操作方法
+
+#### concat()
+
+concat()方法可以在现有数组全部元素基础上 创建一个新数组。它首先会创建一个当前数组的副本，然后再把它的参数添加到副本末尾，最后返回这 个新构建的数组
+
+打平数组参数的行为可以重写，方法是在参数数组上指定一个特殊的符号：Symbol.isConcatSpreadable。这个符号能够阻止 concat()打平参数数组。相反，把这个值设置为 true 可以强制打平 类数组对象：
+
+```javascript
+let colors = ["red", "green", "blue"];
+let newColors = ["black", "brown"];
+let moreNewColors = {
+ [Symbol.isConcatSpreadable]: true,
+ length: 2,
+ 0: "pink",
+ 1: "cyan"
+};
+newColors[Symbol.isConcatSpreadable] = false;
+// 强制不打平数组
+let colors2 = colors.concat("yellow", newColors);
+// 强制打平类数组对象
+let colors3 = colors.concat(moreNewColors);
+console.log(colors); // ["red", "green", "blue"]
+console.log(colors2); // ["red", "green", "blue", "yellow", ["black", "brown"]]
+console.log(colors3); // ["red", "green", "blue", "pink", "cyan"] 
+```
+
+#### slice()
+
+slice()方法可以 接收一个或两个参数：返回元素的开始索引和结束索引。
+
+获得的值是：开始索引到结束索引-1 的内容数组
+
+```javascript
+let colors = ["red", "green", "blue", "yellow", "purple"];
+let colors2 = colors.slice(1);
+let colors3 = colors.slice(1, 4);
+alert(colors2); // green,blue,yellow,purple
+alert(colors3); // green,blue,yellow 
+```
+
+#### splice()：只是展示一下
+
+### 搜索和位置方法
+
+**严格相等**：indexOf()、lastIndexOf()和 includes()
+
+```javascript
+let numbers = [1, 2, 3, 4, 5, 4, 3, 2, 1];
+alert(numbers.indexOf(4)); // 3
+alert(numbers.lastIndexOf(4)); // 5
+alert(numbers.includes(4)); // true
+alert(numbers.indexOf(4, 4)); // 5
+alert(numbers.lastIndexOf(4, 4)); // 3
+alert(numbers.includes(4, 7)); // false
+let person = { name: "Nicholas" };
+let people = [{ name: "Nicholas" }];
+let morePeople = [person];
+alert(people.indexOf(person)); // -1
+alert(morePeople.indexOf(person)); // 0
+alert(people.includes(person)); // false
+alert(morePeople.includes(person)); // true
+```
+
+断言函数：find()和 findIndex()方法使用了断言函数。
+
+这两个方法都从数组的最小索引开始。find()返回 第一个匹配的元素，findIndex()返回第一个匹配元素的索引。这两个方法也都接收第二个可选的参数， 用于指定断言函数内部 this 的值。
+
+```javascript
+const people = [
+ {
+ name: "Matt",
+ age: 27
+ },
+ {
+ name: "Nicholas",
+ age: 29
+ }
+];
+alert(people.find((element, index, array) => element.age < 28));
+// {name: "Matt", age: 27}
+alert(people.findIndex((element, index, array) => element.age < 28));
+// 0 
+const evens = [2, 4, 6];
+// 找到匹配后，永远不会检查数组的最后一个元素
+evens.find((element, index, array) => {
+ console.log(element);
+ console.log(index);
+ console.log(array);
+ return element === 4;
+});
+// 2
+// 0
+// [2, 4, 6]
+// 4
+// 1
+// [2, 4, 6] 
+```
+
+### 迭代方法
+
+every()、filter()、forEach()、map()、some()
+
+### 归并方法
+
+reduce()、reduceRight()
+
+这两个方法都接收两个参数：对每一项都会运行的归并函数，以及可选的以之为归并起点的初始值。 传给 reduce()和 reduceRight()的函数接收 4 个参数：上一个归并值、当前项、当前项的索引和数 组本身。这个函数返回的任何值都会作为下一次调用同一个函数的第一个参数。如果没有给这两个方法 传入可选的第二个参数（作为归并起点值），则第一次迭代将从数组的第二项开始，因此传给归并函数 的第一个参数是数组的第一项，第二个参数是数组的第二项
+
+## 定型数组
+
+### ArrayBuffer
+
+Float32Array 实际上是一种“视图”，可以允许 JavaScript 运行时访问一块名为 ArrayBuffer 的 预分配内存。ArrayBuffer 是所有定型数组及视图引用的基本单位。
+
+ArrayBuffer()是一个普通的 JavaScript 构造函数，可用于在内存中分配特定数量的字节空间。
+
+ArrayBuffer 一经创建就不能再调整大小。不过，可以使用 slice()复制其全部或部分到一个新 实例中
+
+```javascript
+const buf1 = new ArrayBuffer(16);
+const buf2 = buf1.slice(4, 12);
+alert(buf2.byteLength); // 8 
+```
+
+### DataView
+
+第一种允许你读写 ArrayBuffer 的视图是 DataView。这个视图专为文件 I/O 和网络 I/O 设计，其 API 支持对缓冲数据的高度控制，但相比于其他类型的视图性能也差一些。DataView 对缓冲内容没有 任何预设，也不能迭代。
+
+必须在对**已有的 ArrayBuffer读取或写入时才能创建 DataView 实例**。这个实例可以使用全部或 部分 ArrayBuffer，且维护着对该缓冲实例的引用，以及视图在缓冲中开始的位置。
+
+```javascript
+const buf = new ArrayBuffer(16);
+// DataView 默认使用整个 ArrayBuffer
+const fullDataView = new DataView(buf);
+alert(fullDataView.byteOffset); // 0
+alert(fullDataView.byteLength); // 16
+alert(fullDataView.buffer === buf); // true
+
+// 构造函数接收一个可选的字节偏移量和字节长度
+// byteOffset=0 表示视图从缓冲起点开始
+// byteLength=8 限制视图为前 8 个字节
+const firstHalfDataView = new DataView(buf, 0, 8);
+alert(firstHalfDataView.byteOffset); // 0
+alert(firstHalfDataView.byteLength); // 8
+alert(firstHalfDataView.buffer === buf); // true
+
+// 如果不指定，则 DataView 会使用剩余的缓冲
+// byteOffset=8 表示视图从缓冲的第 9 个字节开始
+// byteLength 未指定，默认为剩余缓冲
+const secondHalfDataView = new DataView(buf, 8);
+alert(secondHalfDataView.byteOffset); // 8
+alert(secondHalfDataView.byteLength); // 8
+alert(secondHalfDataView.buffer === buf); // true 
+
+```
+
+要通过 DataView 读取缓冲，还需要几个组件。 
+
+- 首先是要读或写的字节偏移量。可以看成 DataView 中的某种“地址”。 
+- DataView 应该使用 ElementType 来实现 JavaScript 的 Number 类型到缓冲内二进制格式的转换。 
+- 最后是内存中值的字节序。默认为大端字节序。
+
+#### 1、ElementType
+
+| ElementType | 字 节 | 说 明                 | 等价的 C 类型  | 值的范围                     |
+| ----------- | ----- | --------------------- | -------------- | ---------------------------- |
+| Int8        | 1     | 8位有符号整数         | signed char    | -128~127                     |
+| Uint8       | 1     | 8 位无符号整数        | unsigned char  | 0~255                        |
+| Int16       | 2     | 16 位有符号整数       | short          | -32 768~32 767               |
+| Uint16      | 2     | 16 位无符号整数       | unsigned short | 0~65 535                     |
+| Int32       | 4     | 32 位有符号整数       | int            | -2 147 483 648~2 147 483 647 |
+| Uint32      | 4     | 32 位无符号整数       | unsigned int   | 0~4 294 967 295              |
+| Float32     | 4     | 32 位 IEEE-754 浮点数 | float          | -3.4e+38~+3.4e+38            |
+| Float64     | 8     | 64 位 IEEE-754 浮点数 | double         | -1.7e+308~+1.7e+308          |
+
+DataView 为上表中的每种类型都暴露了 get 和 set 方法，这些方法使用 byteOffset（字节偏移 量）定位要读取或写入值的位置。类型是可以互换使用的
+
+```javascript
+// 在内存中分配两个字节并声明一个 DataView
+const buf = new ArrayBuffer(2);
+const view = new DataView(buf);
+// 说明整个缓冲确实所有二进制位都是 0
+// 检查第一个和第二个字符
+// 一共创建了2个字节，一个字符用一个字节，一个字节占8位
+alert(view.getInt8(0)); // 0
+alert(view.getInt8(1)); // 0
+// 检查整个缓冲
+alert(view.getInt16(0)); // 0
+// 将整个缓冲都设置为 1
+// 255 的二进制表示是 11111111（2^8 - 1）
+view.setUint8(0, 255);
+// DataView 会自动将数据转换为特定的 ElementType
+// 255 的十六进制表示是 0xFF
+view.setUint8(1, 0xFF);
+// 现在，缓冲里都是 1 了
+// 如果把它当成二补数的有符号整数，则应该是-1
+alert(view.getInt16(0)); // -1 
+```
+
+
+
+#### 2、字节序
+
+“字节序”指的是计算系统维护的一种字节顺序的约 定。DataView 只支持两种约定：大端字节序和小端字节序。**大端字节序也称为“网络字节序”**，意思 是最高有效位保存在第一个字节，而最低有效位保存在最后一个字节。小端字节序正好相反，即最低有效位保存在第一个字节，最高有效位保存在最后一个字节。
+
+JavaScript 运行时所在系统的原生字节序决定了如何读取或写入字节，但 DataView 并不遵守这 个约定。对一段内存而言，DataView 是一个中立接口，它会遵循你指定的字节序。DataView 的所 有 API 方法都以大端字节序作为默认值，但接收一个可选的布尔值参数，设置为 true 即可启用小端 字节序。
+
+读取的0位是最左边，从左到右
+
+```javascript
+// 在内存中分配两个字节并声明一个 DataView
+const buf = new ArrayBuffer(2);
+const view = new DataView(buf);
+// 填充缓冲，让第一位和最后一位都是 1
+view.setUint8(0, 0x80); // 设置最左边的位等于 1
+view.setUint8(1, 0x01); // 设置最右边的位等于 1
+// 缓冲内容（为方便阅读，人为加了空格）
+// 0x8 0x0 0x0 0x1
+// 1000 0000 0000 0001
+// 按大端字节序读取 Uint16
+// 0x80 是高字节，0x01 是低字节
+// 0x8001 = 2^15 + 2^0 = 32768 + 1 = 32769
+alert(view.getUint16(0)); // 32769
+
+// 按小端字节序读取 Uint16
+// 因为按照小端字节读取，低有效位保存在第一个字节，最高有效位保存在最后一个字节
+// 0000 0001 1000 0000
+// 0x01 是高字节，0x80 是低字节
+// 0x0180 = 2^8 + 2^7 = 256 + 128 = 384
+alert(view.getUint16(0, true)); // 384 
+
+// 按大端字节序写入 Uint16
+// 使用16进制 每一位的1代表16的X次方
+// 也就是说设置为256为，view.setUint16(0,0x0100)
+view.setUint16(0, 0x0004);
+// 缓冲内容（为方便阅读，人为加了空格）
+// 0x0 0x0 0x0 0x4
+// 0000 0000 0000 0100
+alert(view.getUint8(0)); // 0
+alert(view.getUint8(1)); // 4
+// 按小端字节序写入 Uint16
+view.setUint16(0, 0x0002, true);
+// 缓冲内容（为方便阅读，人为加了空格）
+// 0x0 0x2 0x0 0x0
+// 0000 0010 0000 0000
+alert(view.getUint8(0)); // 2
+alert(view.getUint8(1)); // 0
+```
+
+#### 3、边界情形
+
+DataView 完成读、写操作的前提是必须有充足的缓冲区，否则就会抛出 RangeError：
+
+```javascript
+const buf = new ArrayBuffer(6);
+const view = new DataView(buf);
+// 尝试读取部分超出缓冲范围的值
+view.getInt32(4);
+// RangeError
+// 尝试读取超出缓冲范围的值
+view.getInt32(8);
+// RangeError
+// 尝试读取超出缓冲范围的值
+view.getInt32(-1);
+// RangeError
+// 尝试写入超出缓冲范围的值
+view.setInt32(4, 123);
+// RangeError
+```
+
+DataView 在写入缓冲里会尽最大努力把一个值转换为适当的类型，后备为 0。如果无法转换，则 抛出错误
+
+````javascript
+const buf = new ArrayBuffer(1);
+const view = new DataView(buf);
+view.setInt8(0, 1.5);
+alert(view.getInt8(0)); // 1
+view.setInt8(0, [4]);
+alert(view.getInt8(0)); // 4
+view.setInt8(0, 'f');
+alert(view.getInt8(0)); // 0
+view.setInt8(0, Symbol());
+// TypeError
+````
+
+## Map
+
+### 基本 API
+
+如果想在创建的同时初始化实例，可以给 Map 构造函数传入一个可迭代对象，需要包含键/值对数 组。可迭代对象中的每个键/值对都会按照迭代顺序插入到新映射实例中
+
+```javascript
+// 使用嵌套数组初始化映射
+const m1 = new Map([
+ ["key1", "val1"],
+ ["key2", "val2"],
+ ["key3", "val3"]
+]); 
+// 使用自定义迭代器初始化映射
+const m2 = new Map({
+ [Symbol.iterator]: function*() {
+ yield ["key1", "val1"];
+ yield ["key2", "val2"];
+ yield ["key3", "val3"];
+ }
+});
+alert(m2.size); // 3 
+```
+
+与 Object 只能使用数值、字符串或符号作为键不同，Map 可以使用任何 JavaScript 数据类型作为 键。Map 内部使用 SameValueZero 比较操作（ECMAScript 规范内部定义，语言中不能使用），基本上相 当于使用严格对象相等的标准来检查键的匹配性。与 Object 类似，映射的值是没有限制的。
+
+```javascript
+const m = new Map();
+const functionKey = function() {};
+const symbolKey = Symbol();
+const objectKey = new Object();
+m.set(functionKey, "functionValue");
+m.set(symbolKey, "symbolValue");
+m.set(objectKey, "objectValue");
+alert(m.get(functionKey)); // functionValue
+alert(m.get(symbolKey)); // symbolValue
+alert(m.get(objectKey)); // objectValue
+// SameValueZero 比较意味着独立实例不冲突
+alert(m.get(function() {})); // undefined 
+```
+
+与严格相等一样，在映射中用作键和值的对象及其他“集合”类型，在自己的内容或属性被修改时 仍然保持不变
+
+```javascript
+const m = new Map();
+const objKey = {},
+ objVal = {},
+ arrKey = [],
+ arrVal = [];
+m.set(objKey, objVal);
+m.set(arrKey, arrVal);
+objKey.foo = "foo";
+objVal.bar = "bar";
+arrKey.push("foo");
+arrVal.push("bar");
+console.log(m.get(objKey)); // {bar: "bar"}
+console.log(m.get(arrKey)); // ["bar"] 
+```
+
+### 顺序与迭代
 

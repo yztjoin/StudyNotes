@@ -12,7 +12,7 @@
 
 # 双指针
 
-### 双指针滑动窗口
+## 双指针滑动窗口
 
 起始指针、终止指针
 
@@ -22,7 +22,7 @@
 
 指针每动一次对新来的数据做规则判断，判断是否与窗口内有共同点
 
-### 最长无重复字符串
+## 最长无重复字符串
 
 **描述**
 
@@ -46,7 +46,7 @@
 3、输出所记录的做大连续字符
 ```
 
-### 盛最多水的容器
+## 盛最多水的容器
 
 **描述**
 
@@ -79,7 +79,7 @@ S = abs((X1 - X2)) * min(Y1,Y2)
 3、输出记录的最大面积
 ```
 
-### 接雨水
+## 接雨水
 
 **描述**
 
@@ -132,7 +132,7 @@ var trap = function (height) {
 
 
 
-### 验证回文串
+## 验证回文串
 
 **描述**
 
@@ -164,7 +164,7 @@ var trap = function (height) {
 2、相遇或者交错 返回 true
 ```
 
-### 环形链表
+## 环形链表
 
 **描述**
 
@@ -212,7 +212,7 @@ var trap = function (height) {
 
 
 
-### 实现strStr()
+## 实现strStr()
 
 **描述**
 
@@ -220,7 +220,7 @@ var trap = function (height) {
 
 [实现strStr()](https://leetcode-cn.com/problems/implement-strstr/)
 
-#### 滑动窗口
+### 滑动窗口
 
 **思路**
 
@@ -248,9 +248,9 @@ var strStr = function (haystack, needle) {
 };
 ```
 
-#### Sunday算法
+### Sunday算法
 
-##### 思路
+**思路**
 
 ```
 1、记录初始值要求字符串长度和模板字符串长度j
@@ -261,7 +261,7 @@ var strStr = function (haystack, needle) {
 4、循环结束还是没有匹配成功则返回-1
 ```
 
-##### 代码
+**代码**
 
 ```javascript
 /**
@@ -317,9 +317,9 @@ function searchIndex(haystack, needle) {
 
 
 
-#### KMP算法
+### KMP算法
 
-### 下一个排列
+## 下一个排列
 
 **描述**
 
@@ -389,7 +389,7 @@ var nextPermutation = function (nums) {
 };
 ```
 
-### 颜色分类
+## 颜色分类
 
 **描述**
 
@@ -440,7 +440,7 @@ var sortColors = function (nums) {
 };
 ```
 
-### 删除数组中的重复项
+## 删除数组中的重复项
 
 **描述**
 
@@ -486,7 +486,7 @@ var removeDuplicates = function (nums) {
 
 如果需要增加最多出现的次数，只需要改变一下max
 
-### 相交链表
+## 相交链表
 
 **描述**
 
@@ -526,7 +526,7 @@ var getIntersectionNode = function (headA, headB) {
 };
 ```
 
-### 三数之和(排序+双指针)
+## 三数之和(排序+双指针)
 
 **描述**
 
@@ -600,7 +600,7 @@ var threeSum = function (nums) {
 };
 ```
 
-### 乘积小于K的子数组
+## 乘积小于K的子数组
 
 **描述：**[乘积小于K的子数组](https://leetcode-cn.com/problems/subarray-product-less-than-k/)
 
@@ -633,7 +633,7 @@ var numSubarrayProductLessThanK = function (nums, k)
 };
 ```
 
-### 长度最小的子数组
+## 长度最小的子数组
 
 **描述：**[长度最小的子数组](https://leetcode-cn.com/problems/minimum-size-subarray-sum/)
 
@@ -682,7 +682,7 @@ var minSubArrayLen = function (target, nums) {
 
 
 
-### 总结
+## 总结
 
 快慢指针、收合指针、扩散指针
 
@@ -960,6 +960,55 @@ var jump = function (nums) {
         }
     }
     return count
+};
+```
+
+
+
+## 等差数列划分
+
+**描述**：[等差数列划分](https://leetcode-cn.com/problems/arithmetic-slices/)
+
+>如果一个数列 至少有三个元素 ，并且任意两个相邻元素之差相同，则称该数列为等差数列。
+>
+>例如，[1,3,5,7,9]、[7,7,7,7] 和 [3,-1,-5,-9] 都是等差数列。
+>给你一个整数数组 nums ，返回数组 nums 中所有为等差数组的 子数组 个数。
+>
+>子数组 是数组中的一个连续序列。
+>
+>示例 1：
+>
+>输入：nums = [1,2,3,4]
+>输出：3
+>解释：nums 中有三个子等差数组：[1, 2, 3]、[2, 3, 4] 和 [1,2,3,4] 自身。
+
+**代码**：
+
+```javascript
+/**
+ * @param {number[]} nums
+ * @return {number}
+ */
+var numberOfArithmeticSlices = function (nums) {
+    if(nums.length<3) return 0
+    let dp = new Array(nums.length).fill(0)
+    let res = 0
+    for (let i = 2; i < nums.length; i++) {
+        if (nums[i] - nums[i - 1] == nums[i - 1] - nums[i - 2]) {
+            dp[i - 2]++
+            for (let j = i - 3; j >= 0; j--) {
+                if (dp[j] !== 0) {
+                    dp[j]++
+                }else {
+                    break
+                }
+            }
+        }
+    }
+    res = dp.reduce((total,num) => {
+        return total + num
+    },0)
+    return res
 };
 ```
 

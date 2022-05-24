@@ -2473,3 +2473,411 @@ console.log(g.next()); // { done: false, value: 3}
 - 每一个生成器会区分作用域，多个生成器不会冲突
 - yield只能定义在生成器中否则报语法错
 
+使用场景：多个异步操作并且每一步异步操作需要等待之前的返回值，同时执行的时机需要把握
+
+# 对象、类与面向对象编程
+
+## 理解对象
+
+对象：一组属性的无序集合，对象的每个属性或方法都由一个名称来标识，这个名称映射到一个值。
+
+### 数据属性
+
+数据属性包含一个保存数据值的位置。值会从这个位置读取，也会写入到这个位置。数据属性有 4 个特性描述它们的行为。
+
+- [[Configurable]]：表示属性是否可以通过 delete 删除并重新定义，是否可以修改它的特 性，以及是否可以把它改为访问器属性。默认情况下，所有直接定义在对象上的属性的这个特 性都是 true，如前面的例子所示。
+- [[Enumerable]]：表示属性是否可以通过 for-in 循环返回。默认情况下，所有直接定义在对 象上的属性的这个特性都是 true，如前面的例子所示。
+- [[Writable]]：表示属性的值是否可以被修改。默认情况下，所有直接定义在对象上的属性的 这个特性都是 true，如前面的例子所示。
+- [[Value]]：包含属性实际的值。这就是前面提到的那个读取和写入属性值的位置。这个特性 的默认值为 undefined。
+
+```javascript
+let person = {};
+Object.defineProperty(person, "name", {
+    writable: false,
+    value: "Nicholas"
+});
+console.log(person.name); // "Nicholas"
+person.name = "Greg";
+console.log(person.name); // "Nicholas" 
+```
+
+### 访问器属性
+
+访问器属性不包含数据值。相反，它们包含一个获取（getter）函数和一个设置（setter）函数，不 过这两个函数不是必需的。
+
+- [[Configurable]]：表示属性是否可以通过 delete 删除并重新定义，是否可以修改它的特 性，以及是否可以把它改为数据属性。默认情况下，所有直接定义在对象上的属性的这个特性 都是 true。
+- [[Enumerable]]：表示属性是否可以通过 for-in 循环返回。默认情况下，所有直接定义在对 象上的属性的这个特性都是 true。
+- [[Get]]：获取函数，在读取属性时调用。默认值为 undefined。
+- [[Set]]：设置函数，在写入属性时调用。默认值为 undefined。
+
+```javascript
+// 定义一个对象，包含伪私有成员 year_和公共成员 edition
+let book = {
+    year_: 2017,
+    edition: 1};
+Object.defineProperty(book, "year", {
+    get() {
+        return this.year_;
+    },
+    set(newValue) {
+        if (newValue > 2017) {
+            this.year_ = newValue;
+            this.edition += newValue - 2017;
+        }
+    }
+});
+book.year = 2018;
+console.log(book.edition); // 2 
+```
+
+这段代码在 book 对象上定义了两个数据属性 year_和 edition，还有一个访问器属性 year。 最终的对象跟上一节示例中的一样。唯一的区别是所有属性都是同时定义的，并且数据属性的 configurable、enumerable 和 writable 特性值都是 false。
+
+### 读取属性
+
+使用 Object.getOwnPropertyDescriptor、（ECMAScript2017）getOwnPropertyDescriptors方法可以取得指定属性的属性描述符。这个方法接 收两个参数：属性所在的对象和要取得其描述符的属性名。返回值是一个对象
+
+```javascript
+let book = {};
+Object.defineProperties(book, {
+    year_: {
+        value: 2017
+    },
+    edition: {
+        value: 1
+    },
+    year: {
+        get: function() {
+            return this.year_;
+        },
+        set: function(newValue){
+            if (newValue > 2017) {
+                this.year_ = newValue;
+                this.edition += newValue - 2017;
+            }
+        }
+    }
+});
+let descriptor = Object.getOwnPropertyDescriptor(book, "year_");
+console.log(descriptor.value); // 2017
+console.log(descriptor.configurable); // false
+console.log(typeof descriptor.get); // "undefined"
+let descriptor = Object.getOwnPropertyDescriptor(book, "year");
+console.log(descriptor.value); // undefined
+console.log(descriptor.enumerable); // false
+console.log(typeof descriptor.get); // "function"
+
+let book = {};
+Object.defineProperties(book, {
+    year_: {
+        value: 2017
+    },
+    edition: {
+        value: 1
+    },
+    year: {
+        get: function() {
+            return this.year_;
+        },
+        set: function(newValue){
+            if (newValue > 2017) {
+                this.year_ = newValue;
+                this.edition += newValue - 2017;
+            }
+        }
+    }
+});
+console.log(Object.getOwnPropertyDescriptors(book));
+// {
+// edition: {
+// configurable: false,
+// enumerable: false,
+// value: 1,
+// writable: false
+// },
+// year: {
+// configurable: false,
+// enumerable: false,
+// get: f(),
+// set: f(newValue),
+// },
+// year_: {
+// configurable: false,
+// enumerable: false,
+// value: 2017,
+// writable: false
+// }
+// } 
+```
+
+### 合并对象
+
+ECMAScript 6 专门为合并对象提供了 Object.assign()方法（浅拷贝）。这个方法接收一个目标对象和一个 或多个源对象作为参数，然后将每个源对象中可枚举（Object.propertyIsEnumerable()返回 true） 和自有（Object.hasOwnProperty()返回 true）属性复制到目标对象。
+
+```javascript
+let dest, src, result;
+/**
+ * 简单复制
+ */
+dest = {};
+src = { id: 'src' };
+result = Object.assign(dest, src);
+// Object.assign 修改目标对象
+// 也会返回修改后的目标对象,如果复制对象的话dest最好是一个空对象
+console.log(dest === result); // true
+console.log(dest !== src); // true
+console.log(result); // { id: src }
+console.log(dest); // { id: src }
+```
+
+### 对象标识及相等判定
+
+在 ECMAScript 6 之前，有些特殊情况即使是===操作符也无能为力：
+
+```javascript
+// 这些是===符合预期的情况
+console.log(true === 1); // false
+console.log({} === {}); // false
+console.log("2" === 2); // false
+// 这些情况在不同 JavaScript 引擎中表现不同，但仍被认为相等
+console.log(+0 === -0); // true
+console.log(+0 === 0); // true
+console.log(-0 === 0); // true
+// 要确定 NaN 的相等性，必须使用极为讨厌的 isNaN()
+console.log(NaN === NaN); // false
+console.log(isNaN(NaN)); // true
+```
+
+为改善这类情况，ECMAScript 6 规范新增了 Object.is()，这个方法与===很像，但同时也考虑 到了上述边界情形。
+
+```javascript
+console.log(Object.is(true, 1)); // false
+console.log(Object.is({}, {})); // false
+console.log(Object.is("2", 2)); // false
+// 正确的 0、-0、+0 相等/不等判定
+console.log(Object.is(+0, -0)); // false
+console.log(Object.is(+0, 0)); // true
+console.log(Object.is(-0, 0)); // false
+// 正确的 NaN 相等判定
+console.log(Object.is(NaN, NaN)); // true
+要检查超过两个值，递归地利用相等性传递即可：
+function recursivelyCheckEqual(x, ...rest) {
+    return Object.is(x, rest[0]) &&
+        (rest.length < 2 || recursivelyCheckEqual(...rest));
+} 
+```
+
+### 增强的对象语法
+
+**1、属性简写**
+
+```javascript
+let name = 'Matt';
+let person = {
+    name
+};
+console.log(person); // { name: 'Matt' } 
+```
+
+**2、可计算属性**
+
+在引入可计算属性之前，如果想使用变量的值作为属性，那么必须先声明对象，然后使用中括号语 法来添加属性。换句话说，不能在对象字面量中直接动态命名属性。
+
+```javascript
+const nameKey = 'name';
+const ageKey = 'age';
+const jobKey = 'job';
+let person = {};
+person[nameKey] = 'Matt';
+person[ageKey] = 27;
+person[jobKey] = 'Software engineer';
+console.log(person); // { name: 'Matt', age: 27, job: 'Software engineer' } 
+```
+
+有了可计算属性，就可以在对象字面量中完成动态属性赋值。中括号包围的对象属性键告诉运行时 将其作为 JavaScript 表达式而不是字符串来求值
+
+```javascript
+const nameKey = 'name';
+const ageKey = 'age';
+const jobKey = 'job';
+let person = {
+    [nameKey]: 'Matt',
+    [ageKey]: 27,
+    [jobKey]: 'Software engineer'
+};
+console.log(person); // { name: 'Matt', age: 27, job: 'Software engineer' }
+// 因为被当作 JavaScript 表达式求值，所以可计算属性本身可以是复杂的表达式，在实例化时再求值
+const nameKey = 'name';
+const ageKey = 'age';
+const jobKey = 'job';
+let uniqueToken = 0;
+function getUniqueKey(key) {
+ return `${key}_${uniqueToken++}`;
+}
+let person = {
+ [getUniqueKey(nameKey)]: 'Matt',
+ [getUniqueKey(ageKey)]: 27,
+ [getUniqueKey(jobKey)]: 'Software engineer'
+};
+console.log(person); // { name_0: 'Matt', age_1: 27, job_2: 'Software engineer' } 
+```
+
+**3、简写方法名**
+
+```javascript
+let person = {
+    sayName(name) {
+        console.log(`My name is ${name}`);
+    } 
+}
+// 简写方法名对获取函数和设置函数也是适用的
+let person = {
+    name_: '',
+    get name() {
+        return this.name_;
+    },
+    set name(name) {
+        this.name_ = name;
+    },
+    sayName() {
+        console.log(`My name is ${this.name_}`);
+    }
+};
+person.name = 'Matt';
+person.sayName(); // My name is Matt 
+// 简写方法名与可计算属性键相互兼容
+const methodKey = 'sayName';
+let person = {
+    [methodKey](name) {
+        console.log(`My name is ${name}`);
+    }
+}
+person.sayName('Matt'); // My name is Matt 
+```
+
+### 对象解构
+
+```javascript
+// 使用对象解构
+let person = {
+ name: 'Matt',
+ age: 27
+};
+let { name: personName, age: personAge } = person;
+console.log(personName); // Matt
+console.log(personAge); // 27
+// 
+let person = {
+ name: 'Matt',
+ age: 27
+};
+```
+
+**1、对象解构 + 属性简写**
+
+```javascript
+let { name, age } = person;
+console.log(name); // Matt
+console.log(age); // 27 
+```
+
+**2、嵌套解构**
+
+解构对于引用嵌套的属性或赋值目标没有限制。为此，可以通过解构来复制对象属性
+
+```javascript
+let person = {
+    name: 'Matt',
+    age: 27,
+    job: {
+        title: 'Software engineer'
+    }
+};
+let personCopy = {};
+({
+    name: personCopy.name,
+    age: personCopy.age,
+    job: personCopy.job
+} = person);
+// 因为一个对象的引用被赋值给 personCopy，所以修改
+// person.job 对象的属性也会影响 personCopy
+person.job.title = 'Hacker'
+console.log(person);
+// { name: 'Matt', age: 27, job: { title: 'Hacker' } }
+console.log(personCopy);
+// { name: 'Matt', age: 27, job: { title: 'Hacker' } }
+```
+
+**注意**：实际多个属性的解构赋值是一个输出无关的顺序化操作。如果一个解构表达式涉及 多个赋值，开始的赋值成功而后面的赋值出错，则整个解构赋值只会完成一部分
+
+## 创建对象
+
+### 原型
+
+构造函数、实例化对象、\__proto__、prototype、constructor
+
+构造函数中prototype属性可以正常访问，但是实例化对象后prototype访问会被当成属性所以浏览器增加了\__proto__
+
+但是本身\__proto_\_并不准确，这使在构造函数中\_\_proto__与prototype指向的并不使一个东西
+
+**正确的是**：构造函数prototype指向原型对象，实例化对象__proto\_\_指向原型对象，constructor指向这个原型的构造函数，只有函数才会有prototype
+
+虽然使用Object构造函数或对象字面量可以方便地创建对象，但这些方式也有明显不足：创建具有同样接口的多个对象需要重复编写很多代码。
+
+构造函数：有一个 prototype 属性引用其原型对象，而这个原型对象也有一个 constructor 属性，引用这个构造函数换句话说，两者循环引用
+
+工厂模式
+
+提取某个物品的抽象化特征，并具体到数据，创建的
+
+**原型和in操作符**
+
+在单独使用时，in 操作符会在可 以通过对象访问指定属性时返回 true，无论该属性是在实例上还是在原型上。
+
+```javascript
+function Person() {}
+Person.prototype.name = "Nicholas";
+Person.prototype.age = 29;
+Person.prototype.job = "Software Engineer";
+Person.prototype.sayName = function() {
+    console.log(this.name);
+};
+let person1 = new Person();
+let person2 = new Person();
+console.log(person1.hasOwnProperty("name")); // false
+console.log("name" in person1); // true
+person1.name = "Greg";
+console.log(person1.name); // "Greg"，来自实例
+console.log(person1.hasOwnProperty("name")); // true
+console.log("name" in person1); // true
+console.log(person2.name); // "Nicholas"，来自原型
+console.log(person2.hasOwnProperty("name")); // false
+console.log("name" in person2); // true
+delete person1.name;
+console.log(person1.name); // "Nicholas"，来自原型
+console.log(person1.hasOwnProperty("name")); // false
+console.log("name" in person1); // true
+```
+
+hasOwnProperty()只有属性存在于实例上 时才返回 true。
+
+### 对象迭代
+
+Object.values()和 Object.entries()接收一个对象，返回它们内容的数组。
+
+```javascript
+const o = {
+    foo: 'bar',
+    baz: 1,
+    qux: {}
+};
+console.log(Object.values(o)); 
+// ["bar", 1, {}]
+console.log(Object.entries((o)));
+// [["foo", "bar"], ["baz", 1], ["qux", {}]] 
+```
+
+## 继承
+
+### 盗用构造函数
+
+在子类构造函数中使用apply()和call()方法创建新的对象上下文调用父类构造函数，这一技术就是“盗用构造函数”也称作“经典继承”或“对象伪装”

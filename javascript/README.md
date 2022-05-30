@@ -2878,6 +2878,379 @@ console.log(Object.entries((o)));
 
 ## 继承
 
+### 原型链
+
+理解了prototype的指向就很容易理解继承，原型链就是使用prototype将多个父子相关的构造函数串起来，达到了复用、解耦和明确定义
+
 ### 盗用构造函数
 
 在子类构造函数中使用apply()和call()方法创建新的对象上下文调用父类构造函数，这一技术就是“盗用构造函数”也称作“经典继承”或“对象伪装”
+
+```javascript
+function SuperType(name){
+ this.name = name;
+}
+function SubType() {
+ // 继承 SuperType 并传参
+ SuperType.call(this, "Nicholas");
+ // 实例属性
+ this.age = 29;
+}
+let instance = new SubType();
+console.log(instance.name); // "Nicho
+```
+
+**问题：**
+
+1. 必须在构造函数中定义方法，因此函数不能重用
+2. 子类不能访问父类原型上定义的方法，因为，SuperType.prototype = undefined，找不到父类，盗用构造函数只是借用了函数和属性的定义
+
+### 组合继承
+
+组合继承就是结合了盗用构造函数和原型链，将两者的有点几种了起来，思路就是使用原型链继承原型上的属性和方法，通过盗用构造函数继承实例属性。
+
+```javascript
+function SuperType(name){
+    this.name = name;
+    this.colors = ["red", "blue", "green"];
+}
+SuperType.prototype.sayName = function() {
+    console.log(this.name);
+};
+function SubType(name, age){
+    // 继承属性
+    SuperType.call(this, name);
+    this.age = age;
+}
+// 继承方法
+SubType.prototype = new SuperType();
+SubType.prototype.sayAge = function() {
+    console.log(this.age);
+};
+let instance1 = new SubType("Nicholas", 29);
+instance1.colors.push("black");
+console.log(instance1.colors); // "red,blue,green,black"
+instance1.sayName(); // "Nicholas";
+instance1.sayAge(); // 29
+let instance2 = new SubType("Greg", 27);
+console.log(instance2.colors); // "red,blue,green"
+instance2.sayName(); // "Greg";
+instance2.sayAge(); // 27
+```
+
+### 寄生式组合继承
+
+区别
+
+- 组合式继承会调用两次父函数
+- 寄生组合取的是父类原型的一个副本，然后增强对象，最后赋值给自己的原型指向这个副本
+
+函数接收两个参数，父类构造函数和子类构造函数。
+
+```javascript
+function inheritPrototype(subType, superType) {
+    let prototype = Object.create(superType.prototype); // 创建对象
+    prototype.constructor = subType; // 增强对象  修改指向到构造函数
+    subType.prototype = prototype; // 赋值对象  修改原型指向原型对象
+}
+```
+
+## 类
+
+类是用来方便快捷创建构造函数，类包含构造函数方法、实例方法、获取函数、设置函数和静态类方法，都是可选
+
+与函数构造函数一样，多数编程风格都建议类名的**首字母要大写**，以区别于通过它创建的实例
+
+```javascript
+// 空类定义，有效
+class Foo {}
+// 有构造函数的类，有效
+class Bar {
+ constructor() {}
+}
+// 有获取函数的类，有效
+class Baz {
+ get myBaz() {}
+}
+// 有静态方法的类，有效
+class Qux {
+ static myQux() {}
+} 
+```
+
+**类表达式的名称是可选的**。在把类表达式赋值给变量后，可以通过 name 属性取得类表达式的名称 字符串。**但不能在类表达式作用域外部访问这个标识符。**
+
+```javascript
+let Person = class PersonName {
+ identify() {
+ console.log(Person.name, PersonName.name);
+ }
+}
+let p = new Person();
+p.identify(); // PersonName PersonName
+console.log(Person.name); // PersonName
+console.log(PersonName); // ReferenceError: PersonName is not defined
+```
+
+
+
+### 函数与类的区别
+
+**1、函数声明可以提升，但是类定义不能**
+
+```javascript
+console.log(FunctionExpression); // undefined
+var FunctionExpression = function() {};
+console.log(FunctionExpression); // function() {}
+console.log(FunctionDeclaration); // FunctionDeclaration() {}
+function FunctionDeclaration() {}
+console.log(FunctionDeclaration); // FunctionDeclaration() {}
+console.log(ClassExpression); // undefined
+var ClassExpression = class {};
+console.log(ClassExpression); // class {}
+console.log(ClassDeclaration); // ReferenceError: ClassDeclaration is not defined
+class ClassDeclaration {}
+console.log(ClassDeclaration); // class ClassDeclaration {}
+```
+
+**2、函数受到作用域限制，类受块作用域限制**
+
+```javascript
+{
+ function FunctionDeclaration() {}
+ class ClassDeclaration {}
+}
+console.log(FunctionDeclaration); // FunctionDeclaration() {}
+console.log(ClassDeclaration); // ReferenceError: ClassDeclaration is not defined 
+```
+
+**3、类构造函数与构造函数的主要区别是，调用类构造函数必须使用 new 操作符。而普通构造函数如果 不使用 new 调用，那么就会以全局的 this（通常是 window）作为内部对象。**
+
+```javascript
+function Person() {}
+class Animal {}
+// 把 window 作为 this 来构建实例
+let p = Person();
+let a = Animal();
+// TypeError: class constructor Animal cannot be invoked without 'new' 
+```
+
+**4、类是一个特殊的函数**，声明一 个类之后，通过 typeof 操作符检测类标识符，表明它是一个函数
+
+```javascript
+class Person {}
+console.log(Person); // class Person {}
+console.log(typeof Person); // function 
+```
+
+
+
+### 类构造函数
+
+对象的[[prototype]]就是\__proto__
+
+constructor关键字用于在类定义块内部创建类的构造函数，告诉解释器 在使用 new 操作符创建类的新实例时，应该调用这个函数。
+
+内存中新建一个对象，这个对象内部的[[prototype]]属性指针被赋值为构造函数的prototype属性，构造函数内部的this被赋值为这个新对象（this指向新对象），执行构造函数内部的代码（constructor），如果构造函数返回非空对象，则返回该对象，否则，返回刚创建的新对象。
+
+默认情况下，类构造函数会在执行之后返回 **this 对象**。构造函数返回的对象会被用作**实例化的对象**，如果返回的不是 this 对 象，而是其他对象，那么这个对象**不会通过instanceof操作符检测出跟类有关联**
+
+```javascript
+class Person {
+    constructor(override) {
+        this.foo = 'foo';
+        if (override) {
+            return {
+                bar: 'bar'
+            };
+        }
+    }
+}
+let p1 = new Person(),
+    p2 = new Person(true);
+console.log(p1); // Person{ foo: 'foo' }
+console.log(p1 instanceof Person); // true
+console.log(p2); // { bar: 'bar' }
+console.log(p2 instanceof Person); // false 
+```
+
+### 实例、原型和类成员
+
+实例上的成员、原型上的成员、类本省的成员
+
+**1、实例成员**
+
+每次通过new调用类标识符时，都会执行类构造函数。在这个函数内部，可以为新创建的实例（this） 添加“自有”属性。
+
+在构造函数执行完毕后，仍然可以给实例继续添加新成员
+
+每个实例都对应一个唯一的成员对象，不会在原型上共享
+
+```javascript
+class Person {
+    constructor() {
+        // 这个例子先使用对象包装类型定义一个字符串
+        // 为的是在下面测试两个对象的相等性
+        this.name = new String('Jack');
+        this.sayName = () => console.log(this.name);
+        this.nicknames = ['Jake', 'J-Dog']
+    }
+}
+let p1 = new Person(),
+    p2 = new Person();
+p1.sayName(); // Jack
+p2.sayName(); // Jack
+console.log(p1.name === p2.name); // false
+console.log(p1.sayName === p2.sayName); // false
+console.log(p1.nicknames === p2.nicknames); // false
+p1.name = p1.nicknames[0];
+p2.name = p2.nicknames[1];
+p1.sayName(); // Jake
+p2.sayName(); // J-Dog 
+```
+
+2、原型方法和访问器
+
+类方法等同于对象属性，因此可以使用字符串、符号或计算的值作为键
+
+```javascript
+const symbolKey = Symbol('symbolKey');
+class Person {
+    stringKey() {
+        console.log('invoked stringKey');
+    }
+    [symbolKey]() {
+        console.log('invoked symbolKey');
+    }
+    ['computed' + 'Key']() {
+        console.log('invoked computedKey');
+    }
+}
+let p = new Person();
+p.stringKey(); // invoked stringKey
+p[symbolKey](); // invoked symbolKey
+p.computedKey(); // invoked computedKey
+```
+
+类定义也支持获取和设置访问器。语法与行为跟普通对象一样
+
+```javascript
+class Person {
+    set name(newName) {
+        this.name_ = newName;
+    }
+    get name() {
+        return this.name_;
+    }
+}
+let p = new Person();
+p.name = 'Jake';
+console.log(p.name); // Jake
+```
+
+3、静态类方法
+
+存在于类上，实例对象和原型无法访问
+
+```javascript
+class Person {
+    constructor() {
+        // 添加到 this 的所有内容都会存在于不同的实例上
+        this.locate = () => console.log('instance', this);
+    }
+    // 定义在类的原型对象上
+    locate() {
+        console.log('prototype', this);
+    }
+    // 定义在类本身上
+    static locate() {
+        console.log('class', this);
+    }
+}
+let p = new Person();
+p.locate(); // instance, Person {}
+Person.prototype.locate(); // prototype, {constructor: ... }
+Person.locate(); // class, class Person {}
+```
+
+4、迭代器与生成器方法
+
+类定义语法支持在原型和类本身上定义生成器方法
+
+```javascript
+class Person {
+    // 在原型上定义生成器方法
+    *createNicknameIterator() {
+        yield 'Jack';
+        yield 'Jake';
+        yield 'J-Dog';
+    }
+    // 在类上定义生成器方法
+    static *createJobIterator() {
+        yield 'Butcher';
+        yield 'Baker';
+        yield 'Candlestick maker';
+    }
+}
+let jobIter = Person.createJobIterator();
+console.log(jobIter.next().value); // Butcher
+console.log(jobIter.next().value); // Baker
+console.log(jobIter.next().value); // Candlestick maker
+let p = new Person();
+let nicknameIter = p.createNicknameIterator();
+console.log(nicknameIter.next().value); // Jack
+console.log(nicknameIter.next().value); // Jake
+console.log(nicknameIter.next().value); // J-Dog
+```
+
+因为支持生成器方法，所以可以通过添加一个默认的迭代器，把类实例变成可迭代对象
+
+```javascript
+class Person {
+    constructor() {
+        this.nicknames = ['Jack', 'Jake', 'J-Dog'];
+    }
+    *[Symbol.iterator]() {
+        yield *this.nicknames.entries();
+    }
+}
+let p = new Person();
+for (let [idx, nickname] of p) {
+    console.log(nickname);
+}
+// Jack
+// Jake
+// J-Dog 
+```
+
+或者只返回迭代器实例
+
+```javascript
+class Person {
+    constructor() {
+        this.nicknames = ['Jack', 'Jake', 'J-Dog'];
+    }
+    [Symbol.iterator]() {
+        return this.nicknames.entries();
+    }
+}
+let p = new Person();
+for (let [idx, nickname] of p) {
+    console.log(nickname);
+}
+// Jack
+// Jake
+// J-Dog
+```
+
+### 继承
+
+原生支持了类继承机制，虽然使用的是新语法，但背后依旧是原型链
+
+使用 extends 关键字继承任何拥有[[Construct]]和原型的对象，也可以继承普通的构造函数（保持向后兼容）
+
+1、使用了extends关键字继承并且在子类中声明了constructor方法，那么必须在该方法内调用super
+
+2、super 只能在派生类构造函数和静态方法中使用
+
+3、调用 super()会调用父类构造函数，并将返回的实例赋值给 this

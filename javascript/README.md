@@ -3249,8 +3249,284 @@ for (let [idx, nickname] of p) {
 
 使用 extends 关键字继承任何拥有[[Construct]]和原型的对象，也可以继承普通的构造函数（保持向后兼容）
 
-1、使用了extends关键字继承并且在子类中声明了constructor方法，那么必须在该方法内调用super
+1、使用了extends关键字继承并且在子类中声明了constructor方法，那么必须在该方法内调用super，要么必须再其中返回一个对象
 
 2、super 只能在派生类构造函数和静态方法中使用
 
 3、调用 super()会调用父类构造函数，并将返回的实例赋值给 this
+
+4、super()的行为如同调用构造函数，如果需要给父类构造函数传参，则需要手动传入。
+
+```javascript
+class Vehicle {
+    constructor(licensePlate) {
+        this.licensePlate = licensePlate;
+    }
+}
+class Bus extends Vehicle {
+    constructor(licensePlate) {
+        super(licensePlate);
+    }
+}
+console.log(new Bus('1337H4X')); // Bus { licensePlate: '1337H4X' } 
+```
+
+5、如果没有定义构造函数，在实例化派生类时会调用super()，而且会传入所有传给派生类的参数。
+
+```javascript
+class Vehicle {
+    constructor(licensePlate) {
+        this.licensePlate = licensePlate;
+    }
+}
+class Bus extends Vehicle {}
+console.log(new Bus('1337H4X')); // Bus { licensePlate: '1337H4X' } 
+```
+
+6、在构造函数中，不能再调用super()之前引用this。
+
+**抽象基类**：目的时用于其他构造函数继承，但是本身不能被实例化
+
+## 小结
+
+- 工厂模式就是一个简单的函数，用于创建对象，添加属性、方法，返回对象。
+- 构造函数模式可以自定义引用类型，可以使用new关键字，无法重用。
+- 原型模式解决了成员共享的问题，在构造函数的prototyoe上添加属性和方法实现共享
+
+javascript的继承主要是使用原型链链来实现的。
+
+- 原型链继承，使用对象执行浅复制，然后改变prototype属性实现
+- 组合继承是由盗用构造函数+原型链实现的，结合了两者的优势
+- 寄生继承是组合继承的优化版，避免了重复调用父类构造函数导致的浪费
+- 寄生组合继承被认为是实现基于类型继承的最有效方式。
+
+# 代理与反射
+
+代理与反射为开发者提供了拦截并向基本操作嵌入额外行为的能力。
+
+## 代理基础
+
+### 创建代理
+
+代理是用proxy构造函数创建的。接收两个参数：目标对象和处理程序对象。
+
+```javascript
+const target = {
+ id: 'target'
+};
+const handler = {};
+const proxy = new Proxy(target, handler);
+// id 属性会访问同一个值
+console.log(target.id); // target
+console.log(proxy.id); // target
+// 给目标属性赋值会反映在两个对象上
+// 因为两个对象访问的是同一个值
+target.id = 'foo';
+console.log(target.id); // foo
+console.log(proxy.id); // foo
+// 给代理属性赋值会反映在两个对象上
+// 因为这个赋值会转移到目标对象
+proxy.id = 'bar';
+console.log(target.id); // bar
+console.log(proxy.id); // bar
+// hasOwnProperty()方法在两个地方
+// 都会应用到目标对象
+console.log(target.hasOwnProperty('id')); // true
+console.log(proxy.hasOwnProperty('id')); // true
+// Proxy.prototype 是 undefined
+// 因此不能使用 instanceof 操作符
+console.log(target instanceof Proxy); // TypeError: Function has non-object prototype
+'undefined' in instanceof check
+console.log(proxy instanceof Proxy); // TypeError: Function has non-object prototype
+'undefined' in instanceof check
+// 严格相等可以用来区分代理和目标
+console.log(target === proxy); // false 
+```
+
+
+
+### 捕获器
+
+可以定义一个get()捕获器，在某种形式调用get()时触发。
+
+```javascript
+const target = {
+    foo: 'bar'
+};
+const handler = {
+    // 捕获器在处理程序对象中以方法名为键
+    get() {
+        return 'handler override';
+    }
+};
+const proxy = new Proxy(target, handler);
+console.log(target.foo); // bar
+console.log(proxy.foo); // handler override
+console.log(target['foo']); // bar
+console.log(proxy['foo']); // handler override
+console.log(Object.create(target)['foo']); // bar
+console.log(Object.create(proxy)['foo']); // handler override
+```
+
+同时会接收三个参数：目标对象、要查询的属性和代理对象三个参数
+
+```javascript
+const target = {
+    foo: 'bar'
+};
+const handler = {
+    get(trapTarget, property, receiver) {
+        console.log(trapTarget === target);
+        console.log(property);
+        console.log(receiver === proxy);
+    }
+};
+const proxy = new Proxy(target, handler);
+proxy.foo;
+// true
+// foo
+// true 
+```
+
+**捕获器不变式**：为了防止捕获器的某种反常的行为，比如，如果目标对象有一个不可配置且不可写的数据属性，那么在捕获器返回一个与该属性不同的 值时，会抛出 TypeError
+
+```javascript
+const target = {};
+Object.defineProperty(target, 'foo', {
+    configurable: false,
+    writable: false,
+    value: 'bar'
+});
+const handler = {
+    get() {
+        return 'qux';
+    }
+};
+const proxy = new Proxy(target, handler);
+console.log(proxy.foo);
+// TypeError
+```
+
+### 可撤销代理
+
+有时候可能需要中断代理对象与目标对象之间的联系。对于使用 new Proxy()创建的普通代理来 说，这种联系会在代理对象的生命周期内一直持续存在。 Proxy 也暴露了 revocable()方法，这个方法支持撤销代理对象与目标对象的关联。撤销代理的 操作是不可逆的。而且，撤销函数（revoke()）是幂等的，调用多少次的结果都一样。撤销代理之后 再调用代理会抛出 TypeError。
+
+撤销函数和代理对象是在实例化时同时生成的
+
+```javascript
+const target = {
+    foo: 'bar'
+};
+const handler = {
+    get() {
+        return 'intercepted';
+    }
+};
+const { proxy, revoke } = Proxy.revocable(target, handler);
+console.log(proxy.foo); // intercepted
+console.log(target.foo); // bar
+revoke();
+console.log(proxy.foo); // TypeError
+```
+
+### 实用反射API
+
+很多反射方法返回称作“状态标记”的布尔值，表示意图执行的操作是否成功。有时候，状态标记 比那些返回修改后的对象或者抛出错误（取决于方法）的反射 API 方法更有用。
+
+```javascript
+// 初始代码
+const o = {};
+try {
+    Object.defineProperty(o, 'foo', 'bar');
+    console.log('success');
+} catch(e) {
+    console.log('failure');
+} 
+// 重构后的代码
+const o = {};
+if(Reflect.defineProperty(o, 'foo', {value: 'bar'})) {
+    console.log('success');
+} else {
+    console.log('failure');
+} 
+```
+
+### 代理另一个代理
+
+代理可以拦截反射 API 的操作，而这意味着完全可以创建一个代理，通过它去代理另一个代理。
+
+```javascript
+const target = {
+    foo: 'bar'
+};
+const firstProxy = new Proxy(target, {
+    get() {
+        console.log('first proxy');
+        return Reflect.get(...arguments);
+    }
+});
+const secondProxy = new Proxy(firstProxy, {
+    get() {
+        console.log('second proxy');
+        return Reflect.get(...arguments);
+    }
+});
+console.log(secondProxy.foo);
+// second proxy
+// first proxy
+// bar
+```
+
+### 代理的问题与不足
+
+1. **代理中的 this**
+
+方法中的this通常指向调用这个方法的对象，调用代理上的任何方法，比如 proxy.outerMethod()，而这个 方法进而又会调用另一个方法，如 this.innerMethod()，实际上都会调用 proxy.innerMethod()。 多数情况下，这是符合预期的行为。可是，如果目标对象依赖于对象标识，那就可能碰到意料之外的 问题。
+
+## 代理捕获器与反射方法
+
+代理可以捕获 13 种不同的基本操作。这些操作有各自不同的反射 API 方法、参数、关联 ECMAScript 操作和不变式。
+
+**P275**
+
+# 函数
+
+**函数名**
+
+函数名是指向函数的指针，是函数的一个映射，和对象指针类似。
+
+**参数理解**
+
+ECMAScript函数的参数与接收参数可以不一致，可以多可以少，都不会报错。在传参的时候会在函数内部创建一个数组，数组可以没有也可以超过。可以在（非箭头）函数内部访问arguments对象，重中取得传来的每个参数值
+
+箭头函数中不能使用arguments来访问传入的参数，
+
+传参是按照值传递的，如果传参是对象，那么传递的值是这个对象的引用。
+
+传入的参数如果是空会当这个参数为undefined
+
+## 函数内部
+
+### **函数this指向**
+
+只有函数会创建执行上下文
+
+标准函数中：this引用是把函数当成方法调用的上下文对象。
+
+箭头函数中：this引用的是定义箭头函数的上下文。
+
+### new.target
+
+如果函数是正常调用的，则 new.target 的值是 undefined；如果是使用 new 关键字调用的，则 new.target 将引用被调用的 构造函数。
+
+```javascript
+function King() {
+    if (!new.target) {
+        throw 'King must be instantiated using "new"'
+    }
+    console.log('King instantiated using "new"');
+}
+new King(); // King instantiated using "new"
+King(); // Error: King must be instantiated using "new" 
+```
+
